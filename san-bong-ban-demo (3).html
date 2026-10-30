@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sân bóng bàn – Demo đặt bàn và quản lý</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700;800&display=swap">
+<style>
+:root{box-sizing:border-box;
+--bg:#fff6fa;--card:#fff;--ink:#3b1f2f;--mut:#7d5a6e;--navy:#c93a74;--red:#b3205f;--line:#f4d6e4;--free:#e6f5ea;--free-t:#1d5e2c;--res:#fff0cf;--res-t:#7a4b00;--play:#fde0ec;--play-t:#8f1d4c;--cls:#ece3fa;--cls-t:#5a3a9c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#2a1220;--card:#3a1a2d;--ink:#fbeaf2;--mut:#d9aec5;--navy:#a02a5c;--red:#e0628f;--line:#5c2c46;--free:#1c3a2a;--free-t:#9fe0b0;--res:#4a3a14;--res-t:#f3d48f;--play:#5a2442;--play-t:#ffd0e3;--cls:#3d2a63;--cls-t:#dcc9ff}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Be Vietnam Pro",system-ui,sans-serif;font-size:16px;line-height:1.55}
+header{background:var(--navy);color:#fff;padding:calc(12px + env(safe-area-inset-top,0px)) 18px 12px}
+.top{display:flex;gap:12px;align-items:center;justify-content:space-between}
+.top h1{flex:1}
+h1{font-size:19px;margin:0;font-weight:800}
+h1 small{display:block;font-weight:400;opacity:.8;font-size:12px}
+select,input,button{font:inherit}
+select,input{padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink);width:100%}
+.role{width:auto;background:#fff;color:var(--navy);font-weight:500}
+.burger{display:none;background:none;border:1px solid rgba(255,255,255,.6);color:#fff;border-radius:8px;font-size:20px;padding:4px 10px;cursor:pointer}
+
+/* ===== Bố cục: thanh điều hướng dọc bên trái ===== */
+.shell{display:grid;grid-template-columns:230px minmax(0,1fr);max-width:1400px;margin:auto;align-items:start}
+.side{position:sticky;top:0;align-self:start;min-height:calc(100vh - 70px);padding:16px 12px 110px;display:flex;flex-direction:column;gap:4px;border-right:1px solid var(--line);background:var(--card)}
+.side-t{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);padding:2px 14px 8px}
+.nv{background:none;border:0;color:var(--ink);text-align:left;width:100%;padding:12px 14px;border-radius:14px;cursor:pointer;white-space:nowrap}
+.nv:hover{background:var(--line)}
+.nv.on{background:var(--navy);color:#fff;font-weight:700}
+.nv:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.scrim{display:none}
+main{padding:18px;min-width:0}
+@media(max-width:860px){
+ .shell{grid-template-columns:1fr}
+ .burger{display:block}
+ .side{position:fixed;top:0;bottom:0;left:0;width:250px;min-height:0;z-index:30;transform:translateX(-102%);transition:transform .2s;box-shadow:0 0 30px rgba(0,0,0,.3);padding-top:calc(16px + env(safe-area-inset-top,0px));overflow-y:auto}
+ body.menu .side{transform:none}
+ body.menu .scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:29}
+}
+@media(prefers-reduced-motion:reduce){.side{transition:none}}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;margin-bottom:16px;box-shadow:0 4px 14px rgba(201,58,116,.08)}
+h2{font-size:17px;margin:0 0 12px}
+.grid{display:grid;gap:16px;grid-template-columns:1fr 1fr}
+.grid.wide{grid-template-columns:2fr 1fr}
+@media(max-width:760px){.grid,.grid.wide{grid-template-columns:1fr}}
+.btn{background:var(--red);color:#fff;border:0;border-radius:99px;padding:11px 22px;cursor:pointer;font-weight:700}
+.btn.alt{background:var(--navy)}.btn.ghost{background:none;color:var(--ink);border:1px solid var(--line)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.top{flex-wrap:wrap}
+.clock{font:inherit;font-size:12px;background:rgba(255,255,255,.18);color:#fff;border-radius:99px;padding:5px 11px;white-space:nowrap}
+button.clock{border:1px solid rgba(255,255,255,.5);cursor:pointer}
+.btn:focus-visible,select:focus-visible,input:focus-visible,.chip:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:99px;padding:5px 13px;cursor:pointer}
+.chip.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.court{display:grid;gap:10px}
+.lane{display:grid;grid-template-columns:90px repeat(4,1fr);gap:10px;align-items:stretch}
+.lane>span{font-size:12px;color:var(--mut);align-self:center}
+@media(max-width:560px){.lane{grid-template-columns:1fr 1fr 1fr 1fr}.lane>span{grid-column:1/-1}}
+.t{border:2px solid transparent;border-radius:16px;padding:10px 6px;text-align:center;cursor:pointer;min-height:74px;font-size:13px;background:var(--free);color:var(--free-t)}
+.t b{display:block;font-size:18px}
+.t.dat{background:var(--res);color:var(--res-t)}.t.choi{background:var(--play);color:var(--play-t)}.t.lop{background:var(--cls);color:var(--cls-t)}
+.t.sel{border-color:var(--red)}.t.dim{opacity:.25}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
+.bar{height:9px;background:var(--line);border-radius:5px;overflow:hidden}.bar i{display:block;height:100%;background:var(--navy)}
+.tag{font-size:12px;padding:2px 8px;border-radius:99px;background:var(--res);color:var(--res-t)}
+.tag.r{background:var(--cls);color:var(--cls-t)}.tag.g{background:var(--free);color:var(--free-t)}
+.mut{color:var(--mut);font-size:13px}
+.chart{display:flex;align-items:flex-end;gap:6px;height:160px;padding-top:8px}
+.chart div{flex:1;text-align:center;font-size:11px;color:var(--mut)}
+.chart i{display:block;border-radius:4px 4px 0 0;margin-bottom:4px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--navy);color:#fff;padding:11px 18px;border-radius:8px;max-width:90vw;z-index:40}
+.qr{display:block;width:150px;height:150px;background:#fff;padding:6px;border:1px solid var(--line)}
+.box{border-left:4px solid var(--red);padding:8px 12px;background:var(--bg);border-radius:0 6px 6px 0;margin-top:10px;font-size:14px}
+
+/* ===== Vịt vàng chatbot ===== */
+.duck{position:fixed;left:calc(16px + env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));width:66px;height:66px;border-radius:50%;border:3px solid var(--navy);background:var(--card);box-shadow:0 6px 18px rgba(201,58,116,.4);cursor:pointer;padding:0;z-index:35;display:grid;place-items:center}
+.duck svg{width:48px;height:48px;display:block}
+.duck:focus-visible{outline:3px solid var(--red);outline-offset:3px}
+@media(prefers-reduced-motion:no-preference){.duck{animation:bob 3s ease-in-out infinite}.duck:hover svg{animation:wig .4s 2}}
+@keyframes bob{50%{transform:translateY(-4px)}}
+@keyframes wig{25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+.duck-tip{position:fixed;left:calc(92px + env(safe-area-inset-left,0px));bottom:calc(34px + env(safe-area-inset-bottom,0px));background:var(--card);color:var(--ink);border:1px solid var(--line);padding:6px 12px;border-radius:14px 14px 14px 4px;font-size:13px;z-index:35;box-shadow:0 4px 14px rgba(0,0,0,.15)}
+.chat{position:fixed;left:calc(16px + env(safe-area-inset-left,0px));bottom:calc(94px + env(safe-area-inset-bottom,0px));width:min(390px,calc(100vw - 32px));height:min(560px,calc(100vh - 130px));height:min(560px,calc(100dvh - 130px));display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:0 12px 36px rgba(0,0,0,.28);z-index:36;overflow:hidden}
+.chat[hidden]{display:none}
+.chat-h{background:var(--navy);color:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px}
+.chat-h .av{width:34px;height:34px;border-radius:50%;background:#fff;display:grid;place-items:center}
+.chat-h .av svg{width:26px;height:26px}
+.chat-h div{flex:1;line-height:1.25}
+.chat-h small{display:block;opacity:.85;font-size:12px}
+.chat-h button{background:none;border:0;color:#fff;font-size:18px;cursor:pointer;padding:4px 8px;border-radius:8px}
+.msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+.m{max-width:88%;padding:8px 12px;border-radius:16px;font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+.m.bot{background:var(--card);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px}
+.m.me{background:var(--navy);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.cs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.cs .chip{font-size:13px;padding:4px 11px}
+.cs .chip:hover{background:var(--line)}
+.typing{display:flex;gap:4px;padding:12px 14px}
+.typing span{width:7px;height:7px;border-radius:50%;background:var(--mut);animation:dot 1s infinite}
+.typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}
+@keyframes dot{50%{transform:translateY(-4px);opacity:.4}}
+@media(prefers-reduced-motion:reduce){.typing span{animation:none}}
+#chatForm{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line);background:var(--card)}
+#chatForm .btn{padding:8px 16px}
+</style>
+</head>
+<body>
+<header>
+ <div class="top">
+  <button class="burger" id="burger" aria-label="Mở menu" onclick="document.body.classList.toggle('menu')">☰</button>
+  <h1>🏓 Sân bóng bàn 50K14.1<small>Đặt bàn dễ dàng, đặt trước tối đa 2 tuần · bản demo</small></h1>
+  <span class="clock" id="clock" role="timer"></span>
+  <button class="clock" id="tua" type="button" title="Chỉ dùng để demo: tua nhanh giờ hệ thống thêm 30 phút (bấm nhiều lần, quá 3 tiếng sẽ về giờ thực)" onclick="tua()">⏩ +30 phút (demo)</button>
+  <select class="role" id="role" aria-label="Vai trò"></select>
+ </div>
+</header>
+<div class="shell">
+ <nav class="side" id="nav" aria-label="Điều hướng"></nav>
+ <main id="app"></main>
+</div>
+<div class="scrim" onclick="document.body.classList.remove('menu')"></div>
+<div id="toast"></div>
+
+<!-- Chatbot: vịt vàng nhỏ ở góc dưới trái -->
+<div class="duck-tip" id="duckTip">Quạc! Cần đặt bàn không? 🦆</div>
+<button class="duck" id="duck" aria-label="Mở trợ lý Vịt Vàng" aria-expanded="false" aria-controls="chatBox" onclick="chatToggle()">
+ <svg viewBox="0 0 64 64" aria-hidden="true">
+  <path d="M10 40 Q2 33 8 29 Q14 33 15 40Z" fill="#FFD43B" stroke="#E0A800" stroke-width="1.5" stroke-linejoin="round"/>
+  <ellipse cx="30" cy="43" rx="21" ry="15" fill="#FFD43B" stroke="#E0A800" stroke-width="1.5"/>
+  <circle cx="42" cy="24" r="14" fill="#FFD43B" stroke="#E0A800" stroke-width="1.5"/>
+  <path d="M52 22 Q63 22 61 28 Q57 31 51 29Z" fill="#FF9F1C" stroke="#E07B00" stroke-width="1.2" stroke-linejoin="round"/>
+  <circle cx="45.5" cy="20.5" r="2.4" fill="#3b1f2f"/><circle cx="46.2" cy="19.7" r=".8" fill="#fff"/>
+  <circle cx="47.5" cy="27" r="2.6" fill="#FFA6BF" opacity=".75"/>
+  <path d="M19 43 Q29 33 40 44 Q30 53 19 43Z" fill="#FFC107" stroke="#E0A800" stroke-width="1.3" stroke-linejoin="round"/>
+ </svg>
+</button>
+<section class="chat" id="chatBox" hidden role="dialog" aria-label="Trợ lý Vịt Vàng">
+ <div class="chat-h">
+  <span class="av"><svg viewBox="0 0 64 64" aria-hidden="true"><ellipse cx="30" cy="43" rx="21" ry="15" fill="#FFD43B"/><circle cx="42" cy="24" r="14" fill="#FFD43B"/><path d="M52 22 Q63 22 61 28 Q57 31 51 29Z" fill="#FF9F1C"/><circle cx="45.5" cy="20.5" r="2.4" fill="#3b1f2f"/></svg></span>
+  <div><b>Vịt Vàng</b><small>Trợ lý đặt bàn · gõ tự nhiên là hiểu</small></div>
+  <button type="button" aria-label="Đóng trò chuyện" onclick="chatToggle()">✕</button>
+ </div>
+ <div class="msgs" id="msgs" aria-live="polite"></div>
+ <form id="chatForm" onsubmit="return chatSend(event)">
+  <input id="chatIn" placeholder="Nhắn cho vịt… ví dụ: tối mai 7h cho 4 người" autocomplete="off" aria-label="Tin nhắn cho Vịt Vàng">
+  <button class="btn" aria-label="Gửi">➤</button>
+ </form>
+</section>
+
+<script>
+const $=s=>document.querySelector(s);
+const vnd=n=>Math.round(n).toLocaleString('vi-VN')+'đ';
+const D0=new Date(),iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const add=k=>iso(new Date(D0.getFullYear(),D0.getMonth(),D0.getDate()+k)),TODAY=add(0),MAXD=add(14);
+const fd=s=>{const[y,m,d]=s.split('-');return(s==TODAY?'Hôm nay ':'')+d+'/'+m};
+const ngay=k=>{const d=new Date(D0.getFullYear(),D0.getMonth(),D0.getDate()+k);return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()};
+const WD=['CN','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];
+const lab=s=>{const[y,m,d]=s.split('-');const dm=d+'/'+m;return s==TODAY?'hôm nay ('+dm+')':s==add(1)?'ngày mai ('+dm+')':WD[new Date(+y,+m-1,+d).getDay()]+' '+dm};
+const dtext=s=>s==TODAY?'hôm nay':s==add(1)?'ngày mai':s.slice(8)+'/'+s.slice(5,7);
+const ROLES={vl:'Khách vãng lai',thang:'Khách tháng',gv:'Giáo viên',nv:'Nhân viên',ql:'Quản lý'};
+const TABS={vl:['san','dat'],thang:['san','dat','goi'],gv:['san','lop'],nv:['san','dat','quay','goi'],ql:['san','dat','quay','lop','goi','tk','cfg']};
+const NAMES={san:'🏓 Sân',dat:'📅 Đặt bàn',goi:'🎫 Khách tháng',lop:'🎓 Lớp học',quay:'🧾 Quầy',tk:'📊 Thống kê',cfg:'⚙️ Cấu hình'};
+const ST={trong:'Trống',dat:'Đã đặt',choi:'Đang chơi',lop:'Lớp học'};
+const S={role:'ql',view:'san',filter:'all',sel:null,cfg:{gia:20000,coc:20000,giu:15,luot:250000},rev:180000,off:0,
+ tb:{},bk:[],wait:[{ten:'Phạm Quốc Bảo',n:2}],last:null,vd:TODAY,vh:18,chat:[],open:false,draft:null,typing:false,
+ cls:[{id:1,gv:'Cô Lan',iso:TODAY,s:15,e:17,st:'duyet',tb:[1,2]},{id:2,gv:'Thầy Hùng',iso:add(1),s:16,e:18,st:'cho'},{id:3,gv:'Cô Mai',iso:add(1),s:15,e:17,st:'cho'},{id:4,gv:'Thầy Nam',iso:add(1),s:16,e:18,st:'cho'}],
+ mem:[]};
+for(let i=1;i<=16;i++)S.tb[i]={st:'trong'};
+/* ===== Giờ thực, SĐT, gói khách tháng ===== */
+let uid=100;
+const hm=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+// giờ hệ thống = giờ thực của máy (+ phần tua demo S.off nếu có)
+function nowMin(){const d=new Date();return Math.min(d.getHours()*60+d.getMinutes()+S.off,1439)}
+const curH=()=>Math.floor(nowMin()/60);
+const fdy=s=>s.split('-').reverse().join('/');
+function addMo(s,k){const[y,m,d]=s.split('-').map(Number);return iso(new Date(y,m-1+k,d))}
+function normPhone(p){let s=String(p).replace(/[\s.\-()]/g,'');if(s.startsWith('+84'))s='0'+s.slice(3);else if(/^84\d{9}$/.test(s))s='0'+s.slice(2);return s}
+const validPhone=p=>/^0(3|5|7|8|9)\d{8}$/.test(normPhone(p));
+const findMem=p=>S.mem.find(m=>normPhone(m.sdt)==normPhone(p));
+const cap=m=>30*m.th; // mỗi tháng 30 lượt: gói 3 tháng = 90 lượt, 6 tháng = 180 lượt
+// trạng thái gói: phải còn trong thời hạn VÀ chưa dùng hết số lượt của gói
+function mst(m,on){on=on||TODAY;
+ if(on<m.bd)return{k:'chua',t:'Gói chỉ bắt đầu từ '+fdy(m.bd)};
+ if(on>m.ket)return{k:'hh',t:'Gói đã hết hạn ngày '+fdy(m.ket)};
+ if(m.used>=cap(m))return{k:'hl',t:'Đã dùng hết '+cap(m)+' lượt của gói'};
+ return{k:'ok',left:cap(m)-m.used}}
+const holdUntil=b=>Math.max(b.h*60,b.at||0)+S.cfg.giu;
+function mkMem(ten,sdt,th,ketOff,used){const ket=add(ketOff);return{ten,sdt,th,goi:th+' tháng',bd:addMo(ket,-th),ket,used}}
+S.mem=[mkMem('Nguyễn Văn An','0905 111 222',1,12,25),mkMem('Trần Thu Hà','0914 333 444',3,70,12),mkMem('Lê Hoàng','0935 555 666',1,5,30),mkMem('Phạm Minh Châu','0987 777 888',6,150,3),mkMem('Võ Thanh Tùng','0369 222 333',1,20,18),mkMem('Đặng Thị Mai','0912 888 999',1,-3,10),mkMem('Bùi Anh Khoa','0976 123 456',3,60,90)];
+// dữ liệu mẫu bám theo giờ thực lúc mở trang
+{const nm=nowMin(),nh=Math.min(curH()+1,19);
+ const pl=(k,who,n,ago,dur,loai)=>{const sm=Math.max(0,nm-ago);S.tb[k]={st:'choi',who,n,in:hm(sm),sm,bh:Math.floor(sm/60),late:sm%60,dur,coc:0,loai}};
+ pl(5,'Minh Anh',2,45,2);pl(6,'Bảo Trâm',4,20,1);pl(9,'Lê Hoàng',1,70,2,'thang');
+ S.bk.push({id:1,iso:TODAY,tb:7,h:nh,dur:2,n:3,who:'Quang Huy',coc:20000,code:'BB7K2Q',loai:null,at:0},
+  {id:2,iso:TODAY,tb:8,h:nh,dur:2,n:1,who:'Trần Thu Hà',coc:0,code:'TH8M3P',loai:'thang',at:0})}
+
+function toast(m){const t=$('#toast');t.innerHTML='<div class="toast" role="status">'+m+'</div>';clearTimeout(toast.h);toast.h=setTimeout(()=>t.innerHTML='',3200)}
+function go(v){S.view=v;S.sel=null;document.body.classList.remove('menu');render()}
+function render(){
+ $('#role').innerHTML=Object.entries(ROLES).map(([k,v])=>`<option value="${k}"${k==S.role?' selected':''}>${v}</option>`).join('');
+ if(!TABS[S.role].includes(S.view))S.view='san';
+ clockUpd();
+ $('#nav').innerHTML='<div class="side-t">Menu</div>'+TABS[S.role].map(t=>`<button class="nv${t==S.view?' on':''}"${t==S.view?' aria-current="page"':''} onclick="go('${t}')">${NAMES[t]}</button>`).join('');
+ $('#app').innerHTML=V[S.view]();
+ if(S.view=='goi')gh();
+ applyPre();
+}
+function applyPre(){
+ if(S.pre&&S.view=='dat'){const p=S.pre;S.pre=null;[['d',p.d],['h',p.h],['u',p.u],['n',p.n]].forEach(([k,v])=>{const e=$('#'+k);if(e&&v!=null)e.value=v})}
+ if(S.preCode&&S.view=='quay'){const e=$('#cd');if(e)e.value=S.preCode;S.preCode=null}
+ if(S.preCls&&S.view=='lop'){const p=S.preCls;S.preCls=null;[['cdn',p.d],['cs',p.s],['ce',p.e]].forEach(([k,v])=>{const e=$('#'+k);if(e&&v!=null)e.value=v})}
+}
+$('#role').onchange=e=>{S.role=e.target.value;S.sel=null;S.draft=null;render();if(S.chat.length)say(`Đã chuyển sang vai trò <b>${ROLES[S.role]}</b>. Từ giờ mình trả lời theo quyền của vai trò này.`,def())};
+const staff=()=>S.role=='nv'||S.role=='ql';
+
+const bkView=b=>({st:'dat',loai:b.loai,who:b.who,n:b.n,in:hm(b.h*60),dur:b.dur,coc:b.coc,code:b.code,bk:b});
+// trạng thái một bàn: h==null nghĩa là xem trực tiếp theo giờ thực (hôm nay)
+function stAt(n,iso,h){
+ const live=h==null,nm=nowMin(),UP=60;
+ if(live&&iso==TODAY){const p=S.tb[n];if(p&&p.st=='choi')return p}
+ const cl=S.cls.find(c=>c.st=='duyet'&&c.iso==iso&&c.tb&&c.tb.includes(n)&&(live?(nm>=c.s*60-UP&&nm<c.e*60):(c.s<=h&&h<c.e)));
+ if(cl)return{st:'lop',who:'Lớp '+cl.gv+' '+cl.s+':00–'+cl.e+':00'};
+ const b=S.bk.find(b=>b.iso==iso&&b.tb==n&&!b.done&&!b.cancel&&(live?(nm>=b.h*60-UP&&nm<(b.h+b.dur)*60):(b.h<=h&&h<b.h+b.dur)));
+ return b?bkView(b):{st:'trong'}}
+function at(n){return S.vd==TODAY?stAt(n,TODAY,null):stAt(n,S.vd,S.vh)}
+// bàn n có bị chiếm trong khung [h, h+dur) của ngày iso không (lượt đặt, lớp đã duyệt, khách đang chơi)
+function busy(n,iso,h,dur,skip){
+ if(S.bk.some(b=>b.iso==iso&&b.tb==n&&!b.done&&!b.cancel&&b.h<h+dur&&h<b.h+b.dur))return true;
+ if(S.cls.some(c=>c.st=='duyet'&&c.id!=skip&&c.iso==iso&&c.tb&&c.tb.includes(n)&&c.s<h+dur&&h<c.e))return true;
+ if(iso==TODAY){const p=S.tb[n];if(p&&p.st=='choi'&&h*60<Math.max(p.sm+p.dur*60,nowMin()))return true}
+ return false}
+// danh sách bàn hợp lệ cho một khung giờ (BR11, BR13): bàn 5–16 trước, bàn 1–4 chỉ khi bắt đầu từ 19:00
+function freeList(h,dt,dur){
+ dt=dt||TODAY;dur=dur||1;const L=[];
+ for(let i=5;i<=16;i++)if(!busy(i,dt,h,dur))L.push(i);
+ if(h>=19)for(let i=1;i<=4;i++)if(!busy(i,dt,h,dur))L.push(i);
+ return L}
+const pick=(h,dt,dur)=>freeList(h,dt,dur)[0]||0;
+function code(){return Math.random().toString(36).slice(2,8).toUpperCase()}
+function qr(c){let h=0;for(const ch of c)h=(h*31+ch.charCodeAt(0))>>>0;
+ const f=(x,y)=>(x<7&&y<7)||(x>13&&y<7)||(x<7&&y>13);let r='';
+ for(let y=0;y<21;y++)for(let x=0;x<21;x++){let on;
+  if(f(x,y)){const a=x>13?x-14:x,b=y>13?y-14:y;on=a==0||a==6||b==0||b==6||(a>1&&a<5&&b>1&&b<5)}
+  else{h=(h*1103515245+12345)>>>0;on=(h>>16)&1}
+  if(on)r+=`<rect x="${x}" y="${y}" width="1" height="1"/>`}
+ return`<svg class="qr" viewBox="0 0 21 21" fill="#9c1c52" role="img" aria-label="Mã QR ${c}">${r}</svg>`}
+
+const V={};
+V.san=()=>{
+ const f=S.filter,sel=S.sel,t=sel&&at(sel);
+ const lanes=[1,2,3,4].map(d=>`<div class="lane"><span>${d==1?'Dãy 1 · khu dạy học':'Dãy '+d+' · khu khách'}</span>`+[0,1,2,3].map(k=>{
+  const n=(d-1)*4+k+1,b=at(n);
+  return`<div class="t ${b.st}${sel==n?' sel':''}${f!='all'&&f!=b.st?' dim':''}" tabindex="0" onclick="S.sel=${n};render()" onkeydown="if(event.key=='Enter')this.click()"><b>${n}</b>${ST[b.st]}${b.st=='choi'&&S.vd==TODAY?(r=>`<small style="display:block;${r<=0&&staff()?'color:var(--red);font-weight:700':''}">${r>0?'còn '+cdShort(r):staff()?'quá '+(-r)+'′':'sắp trống'}</small>`)(remain(b)):''}</div>`}).join('')+'</div>').join('');
+ let det='<p class="mut">Chạm vào một bàn để xem chi tiết.</p>';
+ if(t){det=`<h2>Bàn ${sel} · ${ST[t.st]}</h2>`;
+  if(t.st=='trong')det+=`<p class="mut">Bàn trống${sel<=4?' (khu dạy học, chỉ nhận khách sau 19:00 hoặc ngoài giờ lớp đã duyệt)':''}.</p>`;
+  else if(t.st=='lop')det+=`<p>${staff()?esc(t.who):'Khu dạy học đang / sắp có lớp.'}</p>`;
+  else if(!staff()){ // khách và giáo viên: không thấy danh tính, chỉ thấy khi nào hết giờ
+   if(t.st=='choi'&&S.vd==TODAY){const r=remain(t);det+=`<p>⏳ ${r>0?'Còn <b>'+cdTxt(r)+'</b> nữa là hết giờ.':'Đã hết giờ, bàn sắp được trả.'}<br><span class="mut">Dự kiến trống lúc ${hm(endMin(t))}.</span></p>`}
+   else det+=`<p class="mut">Bàn đã được đặt${t.bk?' khung '+hm(t.bk.h*60)+'–'+hm((t.bk.h+t.bk.dur)*60):''}. Thông tin khách được ẩn để bảo mật.</p>`}
+  else{det+=staffDet(t);
+   if(t.code)det+=`<p class="mut">Mã đặt: ${t.code} · cọc ${vnd(t.coc)}</p>`;
+   if(t.st=='dat'&&S.vd==TODAY){const w=t.bk.h*60-nowMin();det+=`<p class="mut">${w>0?'Chưa đến giờ chơi ('+hm(t.bk.h*60)+', còn '+w+' phút): chưa check-in được.':'Đã đến giờ chơi. Giữ bàn đến '+hm(holdUntil(t.bk))+'.'}</p>`}
+   if(staff()&&S.vd==TODAY)det+=t.st=='dat'?`<button class="btn"${nowMin()<t.bk.h*60?' disabled':''} onclick="checkinBk(${t.bk.id})">Check-in</button>`:`<button class="btn" onclick="S.co=${sel};go('quay')">Check-out</button>`}}
+ const cnt=s=>[...Array(16)].filter((_,i)=>at(i+1).st==s).length;
+ return(staff()&&S.vd==TODAY?alertBox():'')+`<div class="card"><div class="row" style="margin-bottom:14px"><label for="vd" style="margin:0">📅 Xem sân ngày</label><input id="vd" type="date" style="width:auto" value="${S.vd}" min="${TODAY}" max="${MAXD}" onchange="S.vd=this.value||TODAY;render()">${S.vd!=TODAY?`<label style="margin:0">lúc</label><select style="width:auto" onchange="S.vh=+this.value;render()">${[...Array(15)].map((_,i)=>`<option value="${i+6}"${S.vh==i+6?' selected':''}>${i+6}:00</option>`).join('')}</select>`:'<span class="mut">Đang xem tình trạng trực tiếp</span>'}</div><div class="row" role="group" aria-label="Lọc bàn">`+[['all','Tất cả']].concat(Object.entries(ST)).map(([k,v])=>`<button class="chip${f==k?' on':''}" onclick="S.filter='${k}';render()">${v}${k!='all'?' ('+cnt(k)+')':''}</button>`).join('')+`</div></div>
+ <div class="grid wide"><div class="card court">${lanes}<p class="mut" style="margin:0">Giờ mở cửa 06:00–21:00 · 16 bàn · tối đa 4 người mỗi bàn</p></div><div class="card">${det}</div></div>`};
+
+V.dat=()=>{
+ const L=S.last;
+ return`<div class="card" style="max-width:700px"><h2>Đặt bàn online</h2>
+ <div class="box" style="margin:0 0 6px">💡 Lười điền? Bấm chú <b>vịt vàng</b> ở góc dưới bên trái và gõ như nói chuyện, ví dụ: <i>“tối mai 7h cho 4 người chơi 2 tiếng”</i>. Vịt chỉ điền sẵn biểu mẫu, bạn vẫn là người bấm xác nhận.</div>
+ <label for="d">📅 Ngày chơi (đặt trước tối đa 14 ngày, đến ${fd(MAXD)})</label><input id="d" type="date" value="${TODAY}" min="${TODAY}" max="${MAXD}">
+ <div class="row"><div style="flex:1"><label for="h">Giờ bắt đầu</label><select id="h">${[...Array(15)].map((_,i)=>`<option value="${i+6}">${i+6}:00</option>`).join('')}</select></div>
+ <div style="flex:1"><label for="u">Thời lượng</label><select id="u">${[1,2,3,4].map(i=>`<option value="${i}"${i==2?' selected':''}>${i} giờ</option>`).join('')}</select></div>
+ <div style="flex:1"><label for="n">Số người</label><select id="n">${[1,2,3,4].map(i=>`<option>${i}</option>`).join('')}</select></div></div>
+ ${S.role=='vl'?`<label for="nm">Họ tên</label><input id="nm" value="Khách demo"><label for="ph">Số điện thoại</label><input id="ph" inputmode="tel" value="0905 000 111"><label for="em">Email</label><input id="em" value="khach@email.vn">
+ <label for="bk">Mã QR nhận hoàn cọc</label><input id="bk" placeholder="Tài khoản ngân hàng / QR (để hoàn cọc)">`:staff()?`<div class="box" style="margin-top:8px">🧾 Đặt trực tiếp tại quầy: <b>không thu cọc</b>. Khách phải có mặt <b>đúng giờ chơi</b> mới check-in được (hệ thống chạy theo giờ thực).</div>
+ <label for="ph">Số điện thoại khách (hệ thống tự kiểm tra)</label><input id="ph" inputmode="tel" placeholder="Ví dụ 0905 111 222" oninput="phChk()"><div id="phr" class="mut" style="margin-top:6px" aria-live="polite"></div>
+ <label for="nm">Họ tên (khách vãng lai)</label><input id="nm" placeholder="Tên khách">`:`<p class="mut">Đã đăng nhập: không cần điền lại thông tin, không thu cọc.</p>`}
+ <p><button class="btn" onclick="book()">${S.role=='vl'?'Thanh toán cọc '+vnd(S.cfg.coc)+' (giả lập)':staff()?'Đặt bàn tại quầy':'Đặt bàn'}</button></p></div>
+ ${L?`<div class="card" style="max-width:700px"><h2>${L.wait?'Đã vào danh sách chờ':'Đặt bàn thành công'}</h2>${L.wait?'<p>Hết bàn. Khi có bàn, hệ thống sẽ mời bạn và chờ xác nhận.</p>':`<div class="row" style="align-items:flex-start">${qr(L.code)}<div><p><b>Bàn ${L.tb}</b> · ${L.day} · ${L.h}:00 · ${L.dur} giờ · ${L.n} người<br>Mã check-in: <b>${L.code}</b><br>Chỉ check-in được từ giờ chơi; bàn được giữ ${S.cfg.giu} phút kể từ giờ đó. Quá hạn sẽ tự hủy${L.coc?' và mất cọc':''}.</p><p class="mut">Đã gửi xác nhận qua email, SMS (hộp thư giả lập) và nhắc lại 30 phút trước giờ chơi.</p></div></div>`}</div>`:''}`};
+
+function book(){
+ const h=+$('#h').value,u=+$('#u').value,n=+$('#n').value,d=$('#d').value||TODAY;
+ if(d<TODAY||d>MAXD)return toast('Chỉ đặt được từ hôm nay đến '+fd(MAXD)+' (tối đa 14 ngày).');
+ if(h+u>21)return toast('Lượt đặt phải nằm trong giờ mở cửa 06:00–21:00. Hãy chọn giờ sớm hơn hoặc rút ngắn thời lượng.');
+ if(d==TODAY&&h<curH())return toast('Giờ '+h+':00 đã qua (bây giờ là '+hm(nowMin())+'). Hãy chọn từ '+curH()+':00 trở đi.');
+ const online=S.role=='vl';let mem=null,vl=online;
+ const BADPH='Số điện thoại không hợp lệ: cần 10 chữ số, đầu 03/05/07/08/09 (hoặc +84...).';
+ if(staff()){const ph=$('#ph').value;if(!validPhone(ph))return toast(BADPH);mem=findMem(ph);vl=!mem}
+ else if(S.role=='thang')mem=S.mem[0];
+ if(vl&&!$('#nm').value.trim())return toast('Vui lòng nhập họ tên.');
+ if(online){
+  if(!validPhone($('#ph').value))return toast(BADPH);
+  const em=$('#em').value.trim();if(em&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em))return toast('Email không hợp lệ.');
+  const pm=findMem($('#ph').value);if(pm)return toast('Số điện thoại này thuộc khách tháng '+pm.ten+'. Hãy đăng nhập bằng tài khoản khách tháng.')}
+ if(mem){const s=mst(mem,d),need=Math.ceil(u/2);
+  if(s.k!='ok')return toast(mem.ten+': '+s.t+'. Không đặt bằng gói được; hãy gia hạn gói ở mục Khách tháng.');
+  if(s.left<need)return toast(mem.ten+' chỉ còn '+s.left+' lượt, lượt đặt này cần '+need+' lượt. Hãy rút ngắn thời lượng hoặc gia hạn gói.')}
+ const t=pick(h,d,u);
+ if(!t){S.wait.push({ten:vl?$('#nm').value:(mem?mem.ten:'Khách tài khoản'),n});S.last={wait:1};render();return toast('Hết bàn. Bạn đã vào danh sách chờ.')}
+ const c=code(),coc=online?S.cfg.coc:0,who=vl?$('#nm').value.trim():(mem?mem.ten:ROLES[S.role]);
+ const lo=vl?null:(mem?'thang':'gv');
+ S.bk.push({id:++uid,iso:d,tb:t,h,dur:u,n,who,coc,code:c,loai:lo,at:nowMin()});
+ S.last={tb:t,code:c,h,dur:u,n,day:fd(d),coc};render();toast('Đã giữ bàn '+t+(coc?' · thu cọc '+vnd(coc):' · không thu cọc')+(d==TODAY&&h*60>nowMin()?' · check-in được từ '+hm(h*60):''))}
+
+// Check-in chỉ được khi đã đến giờ chơi (theo giờ hệ thống), và còn trong thời gian giữ bàn
+function checkinBk(id){const b=S.bk.find(x=>x.id==id);
+ if(!b||b.cancel||b.done)return toast('Lượt đặt này không còn hiệu lực.');
+ if(b.iso!=TODAY)return toast('Chưa đến ngày chơi ('+fdy(b.iso)+'): chưa check-in được.');
+ const nm=nowMin();
+ if(nm<b.h*60)return toast('Chưa đến giờ chơi: bàn '+b.tb+' bắt đầu lúc '+hm(b.h*60)+' (còn '+(b.h*60-nm)+' phút). Khách phải đến đúng giờ chơi mới check-in được.');
+ if(nm>holdUntil(b)){const m=expire();render();return toast(m.length?m.join(' '):'Lượt đặt đã quá hạn giữ bàn và bị hủy.')}
+ const pl=S.tb[b.tb];if(pl&&pl.st=='choi')return toast('Bàn '+b.tb+' đang có khách chưa check-out. Hãy check-out trước.');
+ if(b.loai=='thang'){const m=S.mem.find(x=>x.ten==b.who);
+  if(m){const s=mst(m,TODAY),need=Math.ceil(b.dur/2);
+   if(s.k!='ok')return toast(m.ten+': '+s.t+'. Không check-in bằng gói được; gợi ý gia hạn hoặc chơi như khách vãng lai.');
+   if(s.left<need)return toast(m.ten+' chỉ còn '+s.left+' lượt, lượt chơi này cần '+need+' lượt.')}}
+ // ghi nhận GIỜ THỰC khách check-in (sm); giờ hết = giờ check-in thực + thời lượng, không phải giờ đã đặt
+ b.done=true;S.tb[b.tb]={st:'choi',who:b.who,n:b.n,in:hm(nm),sm:nm,bh:b.h,late:Math.max(0,nm-b.h*60),dur:b.dur,coc:b.coc,code:b.code,loai:b.loai};
+ render();toast('Đã check-in bàn '+b.tb+' lúc '+hm(nm)+' (đặt '+hm(b.h*60)+(nm>b.h*60?', trễ '+(nm-b.h*60)+' phút':'')+') · hết giờ lúc '+hm(nm+b.dur*60)+' · '+(b.loai?'khách tháng':'khách vãng lai'))}
+function ci(){const c=$('#cd').value.trim().toUpperCase();const b=S.bk.find(x=>x.code==c);
+ if(!b)return toast('Không tìm thấy mã đặt hợp lệ. Kiểm tra lại mã.');
+ if(b.cancel)return toast('Lượt đặt này đã tự hủy do quá '+S.cfg.giu+' phút chưa check-in.');
+ if(b.done)return toast('Mã này đã check-in rồi.');
+ checkinBk(b.id)}
+function out(n){const b=S.tb[n];
+ if(b.loai){const m=S.mem.find(x=>x.ten==b.who),need=Math.ceil(b.dur/2);if(m)m.used=Math.min(cap(m),m.used+need);S.tb[n]={st:'trong'};S.co=null;render();return toast('Đã ghi nhận '+need+' lượt cho '+b.who+'. Bàn '+n+' đã trống.')}
+ const tot=b.n*b.dur*S.cfg.gia;S.rev+=tot;S.tb[n]={st:'trong'};S.co=null;render();toast('Đã thu '+vnd(tot-b.coc)+(b.coc?' (sau khi trừ cọc)':'')+'. Bàn '+n+' đã trống.')}
+function offer(){const w=S.wait.shift();if(!w)return;const t=pick(curH(),TODAY,1);if(!t){S.wait.unshift(w);return toast('Chưa có bàn trống để mời.')}
+ toast('Đã mời '+w.ten+' nhận bàn '+t+'. Nếu không xác nhận trong hạn, mời người kế tiếp.');render()}
+// tự hủy lượt đặt quá hạn giữ bàn (mất cọc nếu có)
+function expire(){const m=[],nm=nowMin();
+ S.bk.forEach(b=>{if(b.iso==TODAY&&!b.done&&!b.cancel&&nm>holdUntil(b)){b.cancel=1;if(b.coc)S.rev+=b.coc;m.push('Bàn '+b.tb+' ('+b.who+') quá '+S.cfg.giu+' phút chưa check-in: tự hủy'+(b.coc?', mất cọc '+vnd(b.coc):'')+'.')}});
+ return m}
+let lastM=-1;
+function tick(){const m=expire(),nm=nowMin();clockUpd();
+ const ae=document.activeElement,typing=!!(ae&&/^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName)&&$('#app').contains&&$('#app').contains(ae));
+ const al=staff()?alerts():[];
+ if(m.length||al.length)toast(m.concat(al).join(' '));
+ const need=(m.length||nm!=lastM)&&(m.length||S.view=='san'||S.view=='quay');
+ if(need&&!typing){render();lastM=nm}else if(!need)lastM=nm}
+function clockUpd(){const c=$('#clock');if(c)c.textContent='🕒 '+hm(nowMin())+(S.off?' · đã tua +'+S.off+' phút':' · giờ thực')}
+function tua(){S.off=S.off>=180?0:S.off+30;const m=expire();render();toast(m.length?m.join(' '):(S.off?'Demo: đã tua giờ hệ thống +'+S.off+' phút (bây giờ '+hm(nowMin())+').':'Đã trả giờ hệ thống về giờ thực.'))}
+// đếm ngược theo giờ thực: giờ hết = giờ check-in thực + thời lượng
+const endMin=t=>t.sm+t.dur*60;
+const remain=t=>endMin(t)-nowMin();
+function cdTxt(r){if(r<=0)return 'quá '+(-r)+' phút';const h=Math.floor(r/60),m=r%60;return(h?h+' giờ ':'')+m+' phút'}
+const cdShort=r=>r<=0?'quá '+(-r)+'′':(r>=60?Math.floor(r/60)+'g'+String(r%60).padStart(2,'0'):r+'′');
+function playing(){return Object.entries(S.tb).filter(([k,b])=>b.st=='choi').map(([k,b])=>({k:+k,b,r:remain(b)})).sort((a,c)=>a.r-c.r)}
+function alertBox(){const L=playing().filter(x=>x.r<=10);if(!L.length)return'';
+ return`<div class="box" style="margin:0 0 16px" role="status">⏰ <b>Sắp / đã hết giờ:</b> `+L.map(x=>`Bàn ${x.k} (${esc(x.b.who)}, ${x.b.n} người): ${x.r>0?'còn '+x.r+' phút':'<b>quá '+(-x.r)+' phút, cần check-out</b>'}`).join(' · ')+'</div>'}
+// nhắc nhân viên check-out kịp thời: mỗi bàn nhắc 1 lần khi còn ≤5 phút và 1 lần khi hết giờ
+function alerts(){const m=[];playing().forEach(x=>{
+ if(x.r<=0&&!x.b.w0){x.b.w0=1;x.b.w5=1;m.push('⏰ Bàn '+x.k+' ('+x.b.who+') đã hết giờ: cần check-out.')}
+ else if(x.r>0&&x.r<=5&&!x.b.w5){x.b.w5=1;m.push('⏰ Bàn '+x.k+' ('+x.b.who+') còn '+x.r+' phút.')}});return m}
+function staffDet(t){const tag=t.loai?' <span class="tag g">'+(t.loai=='gv'?'giáo viên':'khách tháng')+'</span>':' <span class="tag">vãng lai</span>';
+ if(t.st=='choi'&&S.vd==TODAY){const r=remain(t);return`<p><b>${esc(t.who)}</b>${tag}<br>👥 ${t.n} người · ${t.dur} giờ<br>Đặt lúc ${t.bh!=null?hm(t.bh*60):'—'} · check-in thực <b>${t.in}</b>${t.late>0?' <span class="tag">trễ '+t.late+' phút</span>':''}</p><p>⏱ Hết giờ lúc <b>${hm(endMin(t))}</b> · ${r>0?'còn <b>'+cdTxt(r)+'</b>':'<span class="tag r">quá giờ '+(-r)+' phút: cần check-out</span>'}</p>`}
+ return`<p><b>${esc(t.who)}</b>${tag}<br>👥 ${t.n} người · đặt ${t.in} · ${t.dur} giờ</p>`}
+function qrow(a){const b=a.b,k=a.k,nm=nowMin();let act,tm;
+ if(a.st=='choi'){const r=endMin(b)-nm;tm='vào '+b.in+(b.late>0?' (trễ '+b.late+'′)':'')+' → hết '+hm(endMin(b))+'<br>'+(r>0?'<span class="'+(r<=10?'tag':'mut')+'">còn '+cdTxt(r)+'</span>':'<span class="tag r">quá '+(-r)+' phút: cần check-out</span>');act=`<button class="btn" onclick="S.co=${k};render()">Check-out</button>`}
+ else{const w=a.bk.h*60-nm;tm=hm(a.bk.h*60)+' (+'+b.dur+'h)<br><span class="mut">'+(w>0?'còn '+w+' phút đến giờ chơi':'giữ bàn đến '+hm(holdUntil(a.bk)))+'</span>';act=`<button class="btn ghost"${w>0?' disabled':''} onclick="checkinBk(${a.bk.id})">Check-in</button>`}
+ return`<tr><td>${k}</td><td>${esc(b.who)} ${tg(b)}<br><span class="mut">👥 ${b.n} người</span></td><td>${ST[a.st]}</td><td>${tm}</td><td>${act}</td></tr>`}
+// kiểm tra SĐT khi đặt tại quầy: đúng định dạng? có phải khách tháng không?
+function phChk(){const el=$('#phr'),v=$('#ph').value.trim();if(!el)return;
+ if(!v){el.innerHTML='';return}
+ if(!validPhone(v)){el.innerHTML='⚠️ Số điện thoại chưa hợp lệ: cần 10 chữ số, đầu 03/05/07/08/09 (hoặc +84).';return}
+ const m=findMem(v);
+ if(m){const s=mst(m,TODAY);el.innerHTML=`✅ <b>Khách tháng</b>: ${esc(m.ten)} · gói ${m.goi} (${fdy(m.bd)} → ${fdy(m.ket)}) · `+(s.k=='ok'?'còn <b>'+s.left+'/'+cap(m)+'</b> lượt':'<b>'+s.t+'</b>');$('#nm').value=m.ten}
+ else el.innerHTML='👤 Không có trong danh sách khách tháng → <b>khách vãng lai</b> (không cọc, thu tiền khi check-out). Nhập họ tên bên dưới.'}
+
+V.quay=()=>{
+ const act=[...Object.entries(S.tb).filter(([k,b])=>b.st=='choi').sort(([,a],[,c])=>endMin(a)-endMin(c)).map(([k,b])=>({k,st:'choi',b})),...S.bk.filter(b=>b.iso==TODAY&&!b.done&&!b.cancel).map(b=>({k:b.tb,st:'dat',b:bkView(b),bk:b}))];
+ let bill='';
+ if(S.co&&S.tb[S.co]&&S.tb[S.co].st=='choi'){const b=S.tb[S.co],r0=endMin(b)-nowMin(),inf=`<br><span class="mut">Check-in thực ${b.in}${b.late>0?' (trễ '+b.late+' phút so với giờ đặt)':''} · hết giờ ${hm(endMin(b))} · ${r0>0?'còn '+cdTxt(r0):'quá '+(-r0)+' phút'}</span>`;
+  if(b.loai)bill=`<div class="box"><b>Bàn ${S.co} · ${b.who}</b>${inf}<br>Khách tháng: ghi nhận ${Math.ceil(b.dur/2)} lượt, không thu tiền. <br><button class="btn" onclick="out(${S.co})">Xác nhận check-out</button></div>`;
+  else{let rest=b.coc,rows='';for(let i=1;i<=b.n;i++){const own=b.dur*S.cfg.gia,cut=Math.min(rest,own);rest-=cut;rows+=`<tr><td>Người ${i}</td><td>${vnd(own)}</td><td>−${vnd(cut)}</td><td><b>${vnd(own-cut)}</b></td></tr>`}
+   bill=`<div class="box"><b>Hóa đơn bàn ${S.co}</b>${inf}<br>${b.n} × ${b.dur} giờ × ${vnd(S.cfg.gia)} = ${vnd(b.n*b.dur*S.cfg.gia)}<table><tr><th>Khách</th><th>Tiền chơi</th><th>Trừ cọc</th><th>Phải thu</th></tr>${rows}</table><button class="btn" onclick="out(${S.co})">Xác nhận check-out</button></div>`}}
+ return alertBox()+`<div class="grid"><div class="card"><h2>Check-in bằng mã</h2><label for="cd">Mã đặt bàn khách đưa</label><input id="cd" placeholder="Ví dụ BB7K2Q" value="BB7K2Q"><p><button class="btn" onclick="ci()">Check-in</button></p><p class="mut">Chỉ check-in được khi đã đến giờ chơi. Mỗi người trong cùng một bàn check-in và check-out riêng.</p><hr style="border:0;border-top:1px solid var(--line);margin:14px 0"><label for="lk">Tra cứu khách theo SĐT hoặc tên</label><input id="lk" placeholder="Ví dụ 0905 111 222" oninput="look()"><div id="lkr" style="margin-top:8px"></div></div>
+ <div class="card"><h2>Danh sách chờ (${S.wait.length})</h2>${S.wait.map((w,i)=>`<p style="margin:4px 0">${i+1}. ${w.ten} · ${w.n} người</p>`).join('')||'<p class="mut">Không có ai đang chờ.</p>'}<p><button class="btn alt" onclick="offer()">Mời người đầu hàng</button></p></div></div>
+ <div class="card"><h2>Bàn đang hoạt động</h2><div style="overflow-x:auto"><table><tr><th>Bàn</th><th>Khách</th><th>Trạng thái</th><th>Giờ</th><th></th></tr>${act.map(qrow).join('')||'<tr><td colspan="5" class="mut">Chưa có bàn nào đang chơi hoặc chờ check-in hôm nay.</td></tr>'}</table></div><p class="mut">Check-in chỉ bấm được khi đã đến giờ chơi. Quá ${S.cfg.giu} phút kể từ giờ chơi mà chưa check-in, lượt đặt tự hủy (mất cọc nếu có).</p>${bill}</div>`};
+
+V.lop=()=>{
+ const gv=S.role=='gv',ql=S.role=='ql',o=(a,s)=>a.map(x=>`<option${x==s?' selected':''}>${x}</option>`).join('');
+ const L=S.cls.filter(c=>ql||c.gv=='Cô Lan');
+ return(gv?`<div class="card"><h2>Đăng ký lớp (2 bàn khu dạy học)</h2><div class="row"><div><label for="cdn">Ngày</label><input id="cdn" type="date" value="${TODAY}" min="${TODAY}" max="${MAXD}"></div><div><label for="cs">Bắt đầu</label><select id="cs">${o([6,7,8,9,10,11,12,13,14,15,16,17],15)}</select></div><div><label for="ce">Kết thúc</label><select id="ce">${o([7,8,9,10,11,12,13,14,15,16,17,18,19,20],17)}</select></div></div><p><button class="btn" onclick="reg()">Gửi quản lý duyệt</button></p><p class="mut">Lớp phải kết thúc trước 19:00 và được quản lý duyệt. Hai lớp khác nhau không được trùng ngày, giờ và bàn học.</p></div>`:'')+
+ `<div class="card"><h2>${ql?'Lớp chờ duyệt':'Lớp của tôi'}</h2><div style="overflow-x:auto"><table><tr><th>Giáo viên</th><th>Ngày</th><th>Giờ</th><th>Bàn học</th><th>Trạng thái</th>${ql?'<th></th>':''}</tr>${L.map(c=>`<tr><td>${c.gv}</td><td>${fd(c.iso)}</td><td>${c.s}:00–${c.e}:00</td><td>${c.tb?c.tb.join(', '):'—'}</td><td><span class="tag ${c.st=='duyet'?'g':c.st=='cho'?'':'r'}">${{duyet:'Đã duyệt',cho:'Chờ duyệt',loai:'Từ chối'}[c.st]}</span></td>${ql?`<td>${c.st=='cho'?`<button class="btn" onclick="appr(${c.id},1)">Duyệt</button> <button class="btn ghost" onclick="appr(${c.id},0)">Từ chối</button>`:''}</td>`:''}</tr>`).join('')}</table></div></div>`};
+function reg(){const s=+$('#cs').value,e=+$('#ce').value,d=$('#cdn').value||TODAY,gvn='Cô Lan';
+ if(d<TODAY||d>MAXD)return toast('Chỉ đăng ký trong khoảng từ hôm nay đến '+fd(MAXD)+'.');
+ if(e<=s)return toast('Giờ kết thúc phải sau giờ bắt đầu.');
+ if(e>19)return toast('Lớp phải kết thúc trước 19:00.');
+ if(d==TODAY&&s*60<nowMin())return toast('Giờ bắt đầu '+s+':00 đã qua (bây giờ là '+hm(nowMin())+').');
+ const dup=S.cls.find(c=>c.gv==gvn&&c.iso==d&&c.st!='loai'&&c.s<e&&s<c.e);
+ if(dup)return toast('Bạn đã có lớp '+dup.s+':00–'+dup.e+':00 ngày '+fdy(d)+': trùng giờ.');
+ S.cls.push({id:++uid,gv:gvn,iso:d,s,e,st:'cho'});render();toast('Đã gửi đăng ký. Chờ quản lý duyệt.')}
+// Duyệt lớp: không được trùng ngày + giờ + bàn với lớp đã duyệt khác (và không trùng lịch cùng giáo viên)
+function appr(id,ok){const c=S.cls.find(x=>x.id==id);if(!c||c.st!='cho')return;
+ if(!ok){c.st='loai';render();return toast('Đã từ chối. Các bàn vẫn trống.')}
+ const ov=S.cls.filter(x=>x.id!=c.id&&x.st=='duyet'&&x.iso==c.iso&&x.s<c.e&&c.s<x.e);
+ const same=ov.find(x=>x.gv==c.gv);
+ if(same)return toast('Không thể duyệt: '+c.gv+' đã có lớp '+same.s+':00–'+same.e+':00 cùng ngày '+fdy(c.iso)+' (trùng giờ).');
+ if(c.iso==TODAY&&c.s*60<nowMin())return toast('Không thể duyệt: giờ bắt đầu '+c.s+':00 đã qua (bây giờ là '+hm(nowMin())+').');
+ const free=[1,2,3,4].filter(i=>!busy(i,c.iso,c.s,c.e-c.s,c.id));
+ if(free.length<2)return toast('Xung đột lịch ngày '+fdy(c.iso)+' '+c.s+':00–'+c.e+':00: '+(ov.length?ov.map(x=>x.gv+' '+x.s+'–'+x.e+'h (bàn '+x.tb.join(', ')+')').join('; ')+' đang dùng khu dạy học':'khu dạy học đang có khách giữ bàn')+', chỉ còn '+free.length+' bàn trống (cần 2). Chưa thể duyệt.');
+ c.tb=free.slice(0,2);c.st='duyet';render();toast('Đã duyệt lớp '+c.gv+': bàn '+c.tb.join(' và ')+' ('+fdy(c.iso)+', '+c.s+':00–'+c.e+':00), không trùng lớp nào khác.')}
+
+function gh(){const n=+$('#gl').value||0;$('#gr').innerHTML=`${n} lượt × 2 giờ × ${vnd(S.cfg.gia)} = <b>${vnd(n*2*S.cfg.gia)}</b>`}
+const online=()=>S.role=='vl';
+const tg=b=>b.loai?`<span class="tag g">${b.loai=='gv'?'giáo viên':'khách tháng'}</span>`:'<span class="tag">vãng lai</span>';
+function look(){const raw=$('#lk').value.trim(),q=normPhone(raw).toLowerCase(),el=$('#lkr');if(!raw){el.innerHTML='';return}
+ if(/^[+\d][\d\s.\-]*$/.test(raw)&&q.replace(/\D/g,'').length>=10&&!validPhone(raw)){el.innerHTML='<div class="box">⚠️ Số điện thoại không hợp lệ: cần 10 chữ số, đầu 03/05/07/08/09 (hoặc +84).</div>';return}
+ const m=S.mem.filter(m=>normPhone(m.sdt).includes(q)||m.ten.toLowerCase().includes(raw.toLowerCase()));
+ el.innerHTML=m.length?m.map(m=>{const s=mst(m,TODAY);return`<div class="box"><b>${esc(m.ten)}</b> <span class="tag g">khách tháng</span><br>${m.sdt} · gói ${m.goi}: ${fdy(m.bd)} → ${fdy(m.ket)}<br>Đã dùng ${m.used}/${cap(m)} lượt · ${s.k=='ok'?'còn <b>'+s.left+'</b> lượt':'<b>'+s.t+'</b>'}</div>`}).join(''):'<div class="box">Không có trong danh sách khách tháng: xử lý như <b>khách vãng lai</b> (thu tiền khi check-out).</div>'}
+function mrows(){const q=(S.gq||'').toLowerCase().replace(/\s/g,''),me=S.role=='thang';
+ const L=me?[S.mem[0]]:S.mem.filter(m=>!q||(m.ten+m.sdt).toLowerCase().replace(/\s/g,'').includes(q));
+ if(!L.length)return'<tr><td colspan="7" class="mut">Không tìm thấy. Người này là khách vãng lai.</td></tr>';
+ return L.map(m=>{const s=mst(m,TODAY),c=cap(m),l=c-m.used;
+  const tag=s.k=='hh'?'<span class="tag r">Hết hạn gói</span>':s.k=='chua'?'<span class="tag">Chưa đến ngày bắt đầu</span>':s.k=='hl'?'<span class="tag r">Hết lượt: đã chặn</span>':l<=5?'<span class="tag">Còn '+l+' lượt: nên gia hạn</span>':'<span class="tag g">Còn '+l+' lượt</span>';
+  return`<tr><td><b>${esc(m.ten)}</b></td><td>${m.sdt}</td><td>${m.goi}<br><span class="mut">${c} lượt</span></td><td>${fdy(m.bd)}</td><td>${fdy(m.ket)}</td><td style="min-width:110px"><div class="bar"><i style="width:${Math.min(100,m.used/c*100)}%"></i></div><span class="mut">${m.used}/${c}</span></td><td>${tag}</td></tr>`}).join('')}
+function addM(){const n=$('#an').value.trim(),p=$('#ap').value.trim(),th=+$('#ag').value,bd=$('#ab').value||TODAY;
+ if(!n)return toast('Vui lòng nhập họ tên.');
+ if(!validPhone(p))return toast('Số điện thoại không hợp lệ: cần 10 chữ số, đầu 03/05/07/08/09 (hoặc +84).');
+ if(findMem(p))return toast('Số điện thoại này đã có trong danh sách khách tháng.');
+ if(bd<TODAY)return toast('Ngày bắt đầu gói không được ở quá khứ.');
+ // khách mới: lượt đã dùng luôn bắt đầu từ 0
+ S.mem.push({ten:n,sdt:p,th,goi:th+' tháng',bd,ket:addMo(bd,th),used:0});render();toast('Đã thêm '+n+': gói '+th+' tháng ('+(30*th)+' lượt), '+fdy(bd)+' → '+fdy(addMo(bd,th))+', đã dùng 0 lượt.')}
+V.goi=()=>`<div class="card"><h2>${S.role=='thang'?'Gói của tôi':'Danh sách khách tháng ('+S.mem.length+')'}</h2>${S.role=='thang'?'':`<input placeholder="🔍 Tìm theo tên hoặc số điện thoại" aria-label="Tìm khách tháng" value="${S.gq||''}" oninput="S.gq=this.value;$('#mrows').innerHTML=mrows()">`}<div style="overflow-x:auto"><table><tr><th>Khách</th><th>SĐT</th><th>Gói</th><th>Bắt đầu</th><th>Kết thúc</th><th>Lượt đã dùng</th><th>Trạng thái</th></tr><tbody id="mrows">${mrows()}</tbody></table></div><p class="mut">Ai có tên trong danh sách này mới được tính theo gói. Không có tên thì là khách vãng lai. Mỗi lượt 2 giờ; 3 giờ tính 2 lượt. Gói 1 tháng (30 lượt) 449.000đ · 3 tháng (90 lượt) 1.149.000đ · 6 tháng (180 lượt) 2.349.000đ. Khách chỉ dùng được khi <b>còn trong thời hạn</b> và <b>chưa vượt số lượt tối đa của gói</b>: dùng hết lượt trước hạn thì gói vẫn coi là hết.</p></div>
+${S.role=='ql'?`<div class="card"><h2>Thêm khách tháng</h2><div class="row"><input id="an" placeholder="Họ tên" aria-label="Họ tên" style="flex:2"><input id="ap" placeholder="Số điện thoại" aria-label="Số điện thoại" style="flex:1"><select id="ag" aria-label="Gói" style="flex:1"><option value="1">1 tháng (30 lượt)</option><option value="3">3 tháng (90 lượt)</option><option value="6">6 tháng (180 lượt)</option></select><input id="ab" type="date" aria-label="Ngày bắt đầu gói" value="${TODAY}" min="${TODAY}" style="flex:1"><input aria-label="Lượt đã dùng" value="Đã dùng: 0 lượt" disabled style="flex:1"><button class="btn" onclick="addM()">Thêm</button></div><p class="mut">Ngày kết thúc tự tính từ ngày bắt đầu + số tháng của gói. Khách mới luôn bắt đầu với 0 lượt đã dùng.</p></div>`:''}
+<div class="card"><h2>Gia hạn thêm lượt</h2><label for="gl">Dự kiến chơi thêm (lượt)</label><input id="gl" type="number" min="1" value="10" oninput="gh()"><p id="gr"></p></div>`;
+
+V.tk=()=>{
+ const H=[6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],v=[2,3,2,3,4,3,2,3,5,7,8,9,11,14,10];
+ const lv=x=>x>=10?'var(--red)':x>=6?'var(--navy)':'var(--line)';
+ const W=['T2','T3','T4','T5','T6','T7','CN'],r=[320,280,350,300,520,690,740];
+ return`<div class="card"><h2>Dự báo mật độ theo giờ (AI-1/AI-2)</h2><div class="chart" role="img" aria-label="Biểu đồ mật độ theo giờ">${H.map((h,i)=>`<div><i style="height:${v[i]*10}px;background:${lv(v[i])}"></i>${h}h</div>`).join('')}</div>
+ <p class="mut">Đỏ: cao điểm · hồng đậm: vừa · xám: thấp. Dựa trên 6 tuần dữ liệu mẫu (đủ ngưỡng 4 tuần). Gợi ý: tối thứ Sáu đông khách, nên bố trí thêm nhân viên từ 18:00 đến 20:00.</p></div>
+ <div class="grid"><div class="card"><h2>Doanh thu theo thứ (nghìn đồng)</h2><div class="chart">${r.map((x,i)=>`<div><i style="height:${x/5}px;background:var(--navy)"></i>${W[i]}<br>${x}</div>`).join('')}</div></div>
+ <div class="card"><h2>Doanh thu hôm nay</h2><p style="font-size:28px;font-weight:800;margin:6px 0">${vnd(S.rev)}</p><p class="mut">Cộng dồn khi check-out và khi mất cọc. Tổng hợp cuối ca lúc 21:00.</p></div></div>`};
+
+V.cfg=()=>`<div class="card"><h2>Cấu hình hệ thống</h2><div class="grid"><div><label>Giá chơi (đồng/người/giờ)</label><input type="number" value="${S.cfg.gia}" onchange="S.cfg.gia=+this.value;toast('Đã lưu giá mới')"></div>
+ <div><label>Cọc mỗi lượt đặt (đồng)</label><input type="number" value="${S.cfg.coc}" onchange="S.cfg.coc=+this.value;toast('Đã lưu mức cọc')"></div>
+ <div><label>Hạn giữ bàn (phút)</label><input type="number" value="${S.cfg.giu}" onchange="S.cfg.giu=+this.value;toast('Đã lưu hạn giữ bàn')"></div>
+ <div><label>Giá một lượt giáo viên (2 giờ)</label><input type="number" value="${S.cfg.luot}" onchange="S.cfg.luot=+this.value;toast('Đã lưu')"></div></div>
+ <p class="mut">Mọi thay đổi về tiền được ghi nhật ký (ai, khi nào, giá trị cũ và mới) trong bản triển khai thật.</p></div>`;
+
+/* =====================================================================
+   VỊT VÀNG: trợ lý trò chuyện
+   - Hiểu tiếng Việt có dấu / không dấu, số viết bằng chữ, nhiều cách nói ngày giờ
+   - Nhớ ngữ cảnh: thiếu gì hỏi nấy, đổi ý giữa chừng được
+   - Chỉ điền sẵn biểu mẫu; đặt bàn và thu cọc luôn qua bước xác nhận của người dùng
+   ===================================================================== */
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm=s=>String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/[^a-z0-9:\/\-\s]/g,' ').replace(/\s+/g,' ').trim();
+const NW={mot:1,hai:2,ba:3,bon:4,tu:4,nam:5,sau:6,bay:7,tam:8,chin:9,muoi:10};
+// đổi giờ nói tắt sang giờ 24h; trả null nếu chưa rõ sáng hay tối
+const hr=(h,per)=>{if(h>=13)return h;if(per=='toi'||per=='chieu')return h<12?h+12:h;if(per=='sang')return h;if(per=='trua')return h<=3?h+12:h;if(h>=1&&h<=5)return h+12;if(h==12)return 12;return null};
+const hs=h=>h>=13?h+'h':h==12?'12h trưa':h+'h sáng';
+const CANCEL={t:'✖ Bỏ qua',a:'cancel'};
+const DAYCHIPS=[{t:'Hôm nay',s:'hôm nay'},{t:'Ngày mai',s:'ngày mai'},{t:'Ngày kia',s:'ngày kia'},{t:'Cuối tuần',s:'cuối tuần'}];
+function mk(mo,da){const y=D0.getFullYear();if(mo<1||mo>12||da<1||da>31)return null;let dt=new Date(y,mo-1,da);if(dt.getMonth()!=mo-1)return null;if(dt<new Date(y,D0.getMonth(),D0.getDate()))dt=new Date(y+1,mo-1,da);return iso(dt)}
+function mkDay(da){const y=D0.getFullYear(),mo=D0.getMonth();let dt=new Date(y,mo,da);if(da<D0.getDate())dt=new Date(y,mo+1,da);return dt.getDate()==da?iso(dt):null}
+
+function parse(raw,ask,D){
+ let q=' '+norm(raw)+' ',m;const r={};
+ q=q.replace(/ bay gio /g,' NOW ');
+ q=q.replace(/ (mot|hai|ba|bon|tu|nam|sau|bay|tam|chin|muoi) (?=(?:nguoi|tieng|gio|h|dua|ban|em|anh|chi) )/g,(a,w)=>' '+NW[w]+' ');
+ if(/ (mot minh|solo|ca nhan) /.test(q))r.n=1;
+ if(/ (cap doi|vo chong) /.test(q))r.n=2;
+ // buổi trong ngày
+ let per=null;
+ if(/ chieu /.test(q))per='chieu';
+ else if(/ trua /.test(q))per='trua';
+ else if(/ (sang|buoi sang) /.test(q))per='sang';
+ else if(/ buoi toi | toi (nay|mai|kia|thu|chu nhat|cuoi tuan|nhe|nha) | dem | \d{1,2} ?(?:h|gio|:\d\d) ?(?:\d\d)? ?toi | (?:vao|luc|ve) toi /.test(q))per='toi';
+ const per0=per;per=per||(D&&D.per)||null;
+ // ngày
+ const dow=D0.getDay();
+ if(m=q.match(/ ngay (\d{1,2}) thang (\d{1,2}) /)){r.d=mk(+m[2],+m[1]);q=q.replace(m[0],' ')}
+ else if(m=q.match(/ (\d{1,2}) ?\/ ?(\d{1,2})(?: ?\/ ?\d{2,4})? /)){r.d=mk(+m[2],+m[1]);q=q.replace(m[0],' ')}
+ else if(m=q.match(/ ngay (\d{1,2}) (?!h |gio |tieng |nguoi )/)){r.d=mkDay(+m[1]);q=q.replace(m[0],' ')}
+ if(r.d==null){delete r.d;
+  const wk=/ tuan (sau|toi) /.test(q);let wdn=null;
+  if(m=q.match(/ thu (\d|hai|ba|tu|nam|sau|bay) /))wdn={2:1,3:2,4:3,5:4,6:5,7:6,hai:1,ba:2,tu:3,nam:4,sau:5,bay:6}[m[1]];
+  else if(/ (chu nhat|cn) /.test(q))wdn=0;
+  if(wdn!=null&&wdn!==undefined){let a=(wdn-dow+7)%7;if(wk)a+=7;r.d=add(a)}
+  else if(/ cuoi tuan /.test(q))r.d=add((6-dow+7)%7);
+  else if(/ (ngay kia|kia) /.test(q))r.d=add(2);
+  else if(/ (ngay mai|mai) /.test(q))r.d=add(1);
+  else if(wk)r.d=add(7);
+  else if(/ (hom nay|nay|NOW) /.test(q))r.d=TODAY}
+ // giờ tương đối theo giờ hệ thống: "30 phút nữa", "1 tiếng nữa", "nửa tiếng nữa"
+ let rel=null;
+ if(m=q.match(/ (\d{1,3}) ?(phut|tieng|gio) (?:nua|sau) /)){rel=+m[1]*(m[2]=='phut'?1:60);q=q.replace(m[0],' ')}
+ else if(m=q.match(/ (?:nua|mot nua) tieng (?:nua|sau) /)){rel=30;q=q.replace(m[0],' ')}
+ if(rel!=null){const t0=nowMin()+rel,tt=t0%60>10?Math.floor(t0/60)+1:Math.floor(t0/60);if(tt<=23){r.h=tt;r.d=TODAY}}
+ // khoảng giờ "7h đến 9h", "7-9h"; thời lượng "chơi 2 tiếng"
+ let rs=null;
+ if(m=q.match(/ (\d{1,2})(?: ?(?:h|gio|:) ?\d{0,2})? ?(?:den|-) ?(\d{1,2}) ?(?:h|gio|:) ?\d{0,2} /)){
+  let a=+m[1],b=+m[2];if(b<=a)b+=12;let u=b-a;if(u>4){r.capU=u;u=4}r.u=u;rs=a;q=q.replace(m[0],' ')}
+ else if(m=q.match(/ (?:choi|trong|them) ?([1-4]) ?(?:tieng|gio|h) (?!toi |sang |chieu |trua |dem )/)||q.match(/ (?:khoang|tam|chung) ?(\d) ?tieng /)||q.match(/ (\d{1,2}) ?tieng /)){
+  const u=+m[1];if(u>4)r.capU=u;r.u=Math.max(1,Math.min(4,u));q=q.replace(m[0],' ')}
+ // số người
+ if(m=q.match(/ dat ?(\d) ?ban /)){r.tables=+m[1];q=q.replace(m[0],' dat ')}
+ if(r.n==null&&(m=q.match(/ (\d{1,2}) ?(?:nguoi|dua|ban|bac|em|anh|chi) /)||q.match(/ nhom (\d{1,2}) /))&&+m[1]>0){
+  r.n=Math.min(4,+m[1]);if(+m[1]>4)r.capN=+m[1];q=q.replace(m[0],' ')}
+ // giờ bắt đầu
+ let hh=null,mm=0;
+ if(rs!=null)hh=rs;
+ else if(m=q.match(/ (\d{1,2}) ?(?:h|gio|:) ?(\d{2})?(?= )/)){hh=+m[1];mm=+(m[2]||0);q=q.replace(m[0],' ')}
+ else if(m=q.match(/ (?:luc|vao|khoang) (\d{1,2})(?= )(?! ?(?:nguoi|tieng|dua|ban|em|anh|chi) )/))hh=+m[1];
+ // trả lời cộc lốc cho câu hỏi vừa được hỏi
+ if(ask==='h'&&hh==null&&(m=q.match(/ (\d{1,2})(?::\d\d)? /)))hh=+m[1];
+ if(ask==='n'&&r.n==null){if(m=q.match(/ ([1-4]) /))r.n=+m[1];else if(m=q.match(/ (mot|hai|ba|bon) /))r.n=NW[m[1]]}
+ if(ask==='u'&&r.u==null&&(m=q.match(/ ([1-4]) /)))r.u=+m[1];
+ if(/ NOW /.test(q)){const nm=nowMin();hh=nm%60>10?Math.floor(nm/60)+1:Math.floor(nm/60);if(hh<6)hh=6;r.h=hh;r.d=TODAY;hh=null}
+ if(hh!=null&&hh>=1&&hh<=23){r.min=mm;const v=hr(hh,per);if(v==null)r.amb=hh;else r.h=v}
+ if(per0)r.per=per0;
+ r.hasSlot=['n','h','u','d','amb','per'].some(k=>r[k]!=null);
+ return r}
+
+/* ---- khung chat ---- */
+function say(html,chips){S.chat.push({w:'b',h:html,c:chips||[]});renderChat()}
+function renderChat(){const el=$('#msgs');if(!el)return;const last=S.chat.length-1;
+ el.innerHTML=S.chat.map((m,i)=>m.w=='u'?`<div class="m me">${esc(m.h)}</div>`:`<div class="m bot">${m.h}${i==last&&m.c&&m.c.length&&!S.typing?'<div class="cs">'+m.c.map((c,j)=>`<button type="button" class="chip" onclick="chip(${i},${j})">${esc(c.t)}</button>`).join('')+'</div>':''}</div>`).join('')+(S.typing?'<div class="m bot typing" role="status" aria-label="Vịt đang gõ"><span></span><span></span><span></span></div>':'');
+ el.scrollTop=el.scrollHeight}
+function chatToggle(){S.open=!S.open;$('#chatBox').hidden=!S.open;$('#duck').setAttribute('aria-expanded',S.open);const tp=$('#duckTip');if(tp)tp.style.display='none';
+ if(S.open){if(!S.chat.length)hello();renderChat();setTimeout(()=>$('#chatIn').focus(),30)}}
+function closeChat(){if(S.open)chatToggle()}
+function chatSend(e){e.preventDefault();const i=$('#chatIn'),v=i.value.trim();i.value='';if(v)send(v);return false}
+function reply(fn){S.typing=true;renderChat();setTimeout(()=>{S.typing=false;try{fn()}catch(err){console.error(err);say('Quạc! Mình bị vấp một chút. Bạn thử nói lại ngắn gọn hơn nhé.',def())}renderChat()},350+Math.random()*300)}
+function send(t){S.chat.push({w:'u',h:t});reply(()=>think(t))}
+function chip(i,j){const c=S.chat[i].c[j];S.chat.push({w:'u',h:c.t.replace(/^[^\wÀ-ỹ]+\s*/,'')||c.t});if(c.a)reply(()=>act(c.a));else reply(()=>think(c.s||c.t))}
+function act(a){const[k,arg]=a.split(':');
+ if(k=='fill')return fillForm();
+ if(k=='book')return bookFlow({});
+ if(k=='cancel'){S.draft=null;return say('Ok, mình đã bỏ yêu cầu đó. Cần gì cứ gọi vịt nhé 🦆',def())}
+ if(k=='nav')return goTab(arg);
+ if(k=='quay'){S.preCode=arg;return goTab('quay')}}
+function goTab(tab){
+ if(!TABS[S.role].includes(tab))return say(`Vai trò <b>${ROLES[S.role]}</b> không có mục <b>${NAMES[tab]}</b>. Bạn có thể dùng: ${TABS[S.role].map(t=>NAMES[t]).join(', ')}.`,def());
+ closeChat();go(tab);toast('Đã mở '+NAMES[tab].replace(/^\S+\s/,''))}
+function def(){
+ const m={vl:['Còn bàn tối nay không?','Đặt bàn tối mai 7h cho 4 người','Giá chơi bao nhiêu?','Giờ mở cửa?'],
+  thang:['Tôi còn bao nhiêu lượt?','Đặt bàn 19h thứ 6 cho 2 người','Gia hạn 10 lượt hết bao nhiêu?','Còn bàn tối nay không?'],
+  gv:['Đăng ký lớp ngày mai 15h đến 17h','Giá một lượt giáo viên?','Quy định lớp học','Xem sân tối mai'],
+  nv:['Bàn nào sắp hết giờ?','Danh sách chờ','Tra cứu khách 0905 111 222','Check-in BB7K2Q'],
+  ql:['Doanh thu hôm nay','Còn mấy bàn trống?','Lớp chờ duyệt','Khách tháng sắp hết lượt']}[S.role];
+ return m.map(x=>({t:x,s:x}))}
+function hello(){say(`Quạc quạc! Mình là <b>Vịt Vàng</b> 🦆, trợ lý của sân 50K14.1. Bạn cứ gõ tự nhiên, có dấu hay không dấu đều được, ví dụ <i>“tối mai 7h cho 4 người chơi 2 tiếng”</i>. Mình đặt bàn (điền sẵn biểu mẫu), xem bàn trống, báo giá, tra gói tháng, mở các trang… Bạn đang dùng vai trò <b>${ROLES[S.role]}</b>.`,def())}
+
+function fillForm(){const D=S.draft;
+ if(!D||!D.ready)return say('Mình chưa đủ thông tin để điền biểu mẫu. Bạn cho mình biết giờ và số người nhé.',def());
+ if(!TABS[S.role].includes('dat'))return say('Vai trò này không có mục Đặt bàn.',def());
+ S.pre={d:D.dd,h:D.h,u:D.u,n:D.n};S.draft=null;
+ say('Mình đã điền sẵn biểu mẫu <b>Đặt bàn</b>. Bạn kiểm tra rồi bấm nút xác nhận nhé 🦆');
+ closeChat();go('dat');toast('Đã điền sẵn biểu mẫu: kiểm tra rồi bấm xác nhận để đặt bàn.')}
+
+function hourChips(per){const l=per=='sang'?[7,8,9,10]:per=='chieu'?[14,15,16,17]:per=='toi'?[18,19,20]:[8,15,18,19];
+ return l.map(h=>{const t=per=='sang'||(!per&&h<13)?h+'h sáng':h+'h';return{t,s:t}}).concat([CANCEL])}
+function altHours(h,d,u,k){const hn=curH(),o=[];
+ for(let x=6;x<=20;x++){if(x==h||x+u>21)continue;if(d==TODAY&&x<=hn)continue;if(freeList(x,d,u).length)o.push(x)}
+ return o.sort((a,b)=>Math.abs(a-h)-Math.abs(b-h)).slice(0,k||3)}
+
+/* ---- luồng đặt bàn có nhớ ngữ cảnh ---- */
+function bookFlow(p,pre0){
+ if(S.role=='gv')return say('Giáo viên đăng ký lớp ở mục <b>Lớp học</b> (2 bàn khu dạy học, kết thúc trước 19:00, quản lý duyệt). Bạn muốn mình mở mục đó không?',[{t:'Mở Lớp học',a:'nav:lop'},{t:'Đăng ký lớp ngày mai 15h đến 17h',s:'đăng ký lớp ngày mai 15h đến 17h'}]);
+ const D=S.draft||(S.draft={});
+ ['n','u','d'].forEach(k=>{if(p[k]!=null)D[k]=p[k]});
+ if(p.h!=null){D.h=p.h;D.amb=null}
+ else if(p.amb!=null){D.amb=p.amb;D.h=null}
+ if(p.per)D.per=p.per;
+ if(D.amb&&p.per&&p.h==null){const v=hr(D.amb,p.per);if(v!=null){D.h=v;D.amb=null}}
+ D.ready=false;
+ const notes=[];
+ if(pre0)notes.push(pre0);
+ if(p.capN)notes.push(`Mỗi bàn tối đa 4 người nên mình điền 4 người; ${p.capN-4} người còn lại bạn đặt thêm một lượt khác nhé.`);
+ if(p.tables>1)notes.push(`Mỗi lượt đặt giữ 1 bàn. Muốn ${p.tables} bàn thì đặt ${p.tables} lượt riêng nhé.`);
+ if(p.capU)notes.push('Mỗi lượt đặt tối đa 4 giờ nên mình chọn 4 giờ.');
+ if(p.min&&D.h!=null)notes.push(`Biểu mẫu chọn theo giờ tròn nên mình làm tròn ${D.h}:${String(p.min).padStart(2,'0')} xuống ${D.h}:00.`);
+ const pre=notes.length?'<i>'+notes.join(' ')+'</i><br>':'';
+ if(D.amb){D.ask='amb';return say(pre+`${D.amb}h sáng hay ${D.amb}h tối ạ?`,[{t:D.amb+'h sáng',s:D.amb+'h sáng'},{t:D.amb+'h tối',s:D.amb+'h tối'},CANCEL])}
+ if(D.h==null){D.ask='h';return say(pre+'Bạn muốn bắt đầu chơi lúc mấy giờ?',hourChips(D.per))}
+ if(D.n==null){D.ask='n';return say(pre+'Có mấy người chơi? (tối đa 4 người mỗi bàn)',[1,2,3,4].map(n=>({t:n+' người',s:n+' người'})).concat([CANCEL]))}
+ let h=D.h,u=D.u||2,dd=D.d||TODAY;const assumed=[];
+ if(dd<TODAY||dd>MAXD){D.d=null;D.ask='d';return say(pre+`Chỉ đặt trước tối đa 14 ngày, tức đến ${fd(MAXD)}. Bạn chọn lại ngày giúp mình nhé.`,DAYCHIPS)}
+ if(h<6||h>20){D.h=null;D.ask='h';return say(pre+'Sân mở 06:00–21:00 nên giờ bắt đầu phải từ 6h đến 20h. Bạn chọn lại giờ nhé.',hourChips(D.per))}
+ const past=dd==TODAY&&h<curH();
+ if(past){const nx=curH();D.h=null;D.ask='h';
+  if(nx>20){D.d=add(1);return say(pre+`Hôm nay sân sắp đóng cửa rồi. Mình chuyển sang <b>ngày mai</b> nhé, bạn muốn chơi lúc mấy giờ?`,hourChips(D.per))}
+  return say(pre+`Giờ đó đã qua rồi ạ. Bạn thử từ ${nx}h trở đi nhé.`,[nx,nx+1,nx+2].filter(x=>x<=20).map(x=>({t:hs(x),s:hs(x)})).concat([CANCEL]))}
+ if(h+u>21){u=21-h;D.u=u;notes.push(`Sân đóng cửa lúc 21:00 nên mình rút còn ${u} giờ.`)}
+ else if(!D.u)assumed.push('chơi 2 giờ');
+ if(!D.d)assumed.push('hôm nay');
+ if(S.role=='thang'){const m=S.mem[0],s=mst(m,dd),need=Math.ceil(u/2);
+  if(s.k!='ok'||s.left<need){D.ready=false;return say(pre+`Gói của bạn chưa dùng được cho lượt này: <b>${s.k!='ok'?s.t:'chỉ còn '+s.left+' lượt, lượt này cần '+need}</b>. Bạn gia hạn gói hoặc chọn ngày/thời lượng khác nhé.`,[{t:'Mở gói của tôi',a:'nav:goi'},CANCEL])}}
+ const L=freeList(h,dd,u),t=L[0]||0;
+ const pre2=notes.length?'<i>'+notes.join(' ')+'</i><br>':'';
+ D.dd=dd;D.u=u;D.tb=t;D.ask=null;D.ready=true;
+ if(!t){
+  const alts=altHours(h,dd,u,3);
+  return say(pre2+`Tiếc quá, <b>${h}:00–${h+u}:00 ${lab(dd)}</b> đã hết bàn.`+(alts.length?' Các giờ gần đó còn bàn:':' Hôm đó mình không tìm thấy khung giờ nào gần đó còn bàn.')+'<br><span class="mut">Bạn cũng có thể vào danh sách chờ: khi có bàn, hệ thống sẽ mời bạn.</span>',
+   alts.map(x=>({t:hs(x),s:hs(x)})).concat([{t:'📝 Vào danh sách chờ',a:'fill'},{t:'📅 Đổi ngày',s:'đổi ngày'},CANCEL]))}
+ const cost=D.n*u*S.cfg.gia;
+ const money=S.role=='vl'?`Tạm tính ${vnd(cost)}; đặt online cần cọc ${vnd(S.cfg.coc)} (trừ vào tiền chơi khi check-out).`:S.role=='thang'?`Không thu cọc; khi check-out trừ ${Math.ceil(u/2)} lượt.`:staff()?`Tạm tính ${vnd(cost)} nếu là khách vãng lai. Đặt tại quầy không thu cọc; khách phải đến đúng giờ chơi mới check-in được.`:'Không thu cọc.';
+ say(pre2+`Có bàn rồi! Mình giữ chỗ trong biểu mẫu cho bạn:<br>📅 <b>${lab(dd)}</b> · ⏰ <b>${h}:00–${h+u}:00</b> (${u} giờ) · 👥 <b>${D.n} người</b> · còn ${L.length} bàn trống<br><span class="mut">${money}</span>`+(assumed.length?`<br><span class="mut">Mình tự chọn: ${assumed.join(', ')}. Bạn đổi được bằng các nút bên dưới.</span>`:''),
+  [{t:'✅ Điền vào biểu mẫu',a:'fill'},{t:'🕐 Đổi giờ',s:'đổi giờ'},{t:'📅 Đổi ngày',s:'đổi ngày'},{t:'👥 Đổi số người',s:'đổi số người'},{t:'⏱ Đổi thời lượng',s:'đổi thời lượng'},CANCEL])}
+
+/* ---- trả lời "còn bàn không" ---- */
+function availFlow(p){
+ const d=p.d||TODAY,hn=curH();
+ if(d<TODAY||d>MAXD)return say(`Chỉ xem được và đặt trước tối đa 14 ngày (đến ${fd(MAXD)}).`,DAYCHIPS.slice(0,3));
+ if(p.amb!=null&&p.h==null&&!p.per){const w=dtext(d);return say(`${p.amb}h sáng hay ${p.amb}h tối ạ?`,[{t:p.amb+'h sáng',s:`${p.amb}h sáng ${w} còn bàn không`},{t:p.amb+'h tối',s:`${p.amb}h tối ${w} còn bàn không`}])}
+ if(p.h!=null){const h=p.h,u=Math.min(p.u||2,21-h);
+  if(h<6||h>20)return say('Sân mở 06:00–21:00 nên chỉ nhận giờ bắt đầu từ 6h đến 20h ạ.',def());
+  if(d==TODAY&&h<hn)return say(`Giờ đó hôm nay đã qua rồi ạ. Bạn thử khung giờ từ ${Math.min(hn+1,20)}h nhé.`,def());
+  const L=freeList(h,d,u);
+  S.draft=Object.assign({},S.draft&&S.draft.n?{n:S.draft.n}:{},{h,u:p.u,d:p.d});
+  if(L.length)return say(`Còn bàn! <b>${h}:00 ${lab(d)}</b> (xét ${u} giờ) còn <b>${L.length}</b> bàn trống.`,[{t:'✅ Đặt khung giờ này',a:'book'},{t:'🕐 Giờ khác',s:'đổi giờ'},CANCEL]);
+  const alts=altHours(h,d,u,3);S.draft.h=null;
+  return say(`Khung <b>${h}:00 ${lab(d)}</b> đã hết bàn.`+(alts.length?' Gần đó còn bàn lúc:':''),alts.map(x=>({t:hs(x),s:`${hs(x)} ${dtext(d)} còn bàn không`})).concat([{t:'📅 Ngày khác',s:'đổi ngày'}]))}
+ if(p.per){
+  const R={sang:[6,11],trua:[11,13],chieu:[12,17],toi:[18,20]}[p.per],ls=[];
+  for(let h=R[0];h<=R[1];h++){if(d==TODAY&&h<=hn)continue;ls.push([h,freeList(h,d,1).length])}
+  if(!ls.length)return say(`${lab(d)} khung giờ đó đã qua rồi ạ. Bạn thử ngày mai nhé.`,DAYCHIPS.slice(1,3));
+  S.draft=Object.assign({},S.draft&&S.draft.n?{n:S.draft.n}:{},{d:p.d,per:p.per});
+  const ok=ls.filter(x=>x[1]>0);
+  return say(`Tình hình bàn ${lab(d)}:<br>`+ls.map(([h,c])=>`• ${h}:00 → ${c?'còn <b>'+c+'</b> bàn':'<span class="mut">hết bàn</span>'}`).join('<br>'),ok.slice(0,4).map(([h])=>({t:'Đặt '+hs(h),s:hs(h)})))}
+ // một ngày khác hôm nay, không nói giờ: tóm tắt theo buổi
+ if(p.d&&p.d!=TODAY){
+  const P=[['Sáng',6,11],['Chiều',12,17],['Tối',18,20]];
+  const rows=P.map(([n,a,b])=>{let mx=0;for(let h=a;h<=b;h++)mx=Math.max(mx,freeList(h,p.d,1).length);return `• ${n} (${a}–${b+1}h): ${mx?'còn tối đa <b>'+mx+'</b> bàn trống':'<span class="mut">hết bàn</span>'}`});
+  S.draft=Object.assign({},S.draft&&S.draft.n?{n:S.draft.n}:{},{d:p.d});
+  return say(`Tình hình bàn ${lab(p.d)}:<br>`+rows.join('<br>'),[{t:'Đặt bàn ngày này',a:'book'},{t:'Tối '+dtext(p.d),s:'tối '+dtext(p.d)+' còn bàn không'},{t:'Sáng '+dtext(p.d),s:'sáng '+dtext(p.d)+' còn bàn không'}])}
+ // tổng quan trực tiếp
+ const c=s=>[...Array(16)].filter((_,i)=>stAt(i+1,TODAY,null).st==s).length;
+ const fk=[5,6,7,8,9,10,11,12,13,14,15,16].filter(i=>stAt(i,TODAY,null).st=='trong').length,fd1=[1,2,3,4].filter(i=>stAt(i,TODAY,null).st=='trong').length;
+ say(`Hiện tại: <b>${c('trong')}</b> bàn trống (${fk} ở khu khách${fd1?', '+fd1+' ở khu dạy học: chỉ nhận khách sau 19:00 hoặc ngoài giờ lớp':''}), ${c('choi')} đang chơi, ${c('dat')} đã đặt, ${c('lop')} đang có lớp.`,[{t:'Còn bàn tối nay không?',s:'còn bàn tối nay không'},{t:'Mở sơ đồ sân',a:'nav:san'},{t:'Đặt bàn',a:'book'}])}
+
+function memInfo(m){const s=mst(m,TODAY),l=cap(m)-m.used;return`<b>${esc(m.ten)}</b> · gói ${m.goi} (${cap(m)} lượt): ${fdy(m.bd)} → ${fdy(m.ket)} · đã dùng ${m.used}/${cap(m)} → ${s.k=='ok'?'còn <b>'+l+'</b> lượt'+(l<=5?' (nên gia hạn)':''):'<b>'+s.t+'</b> (đã chặn đặt/check-in bằng gói)'}`}
+
+/* ---- bộ não chính ---- */
+function think(raw,retry){raw=expand(raw);
+ const q=' '+norm(raw)+' ',D=S.draft,p=parse(raw,D&&D.ask,D),has=re=>re.test(q),st=staff(),slots=p.hasSlot;
+ const words=q.trim().split(' ').length;
+ // 1. điều khiển cuộc trò chuyện
+ if(D&&has(/^ (huy|thoi|bo qua|khong can nua|thoi khong|lam lai|reset|huy dat) /)){S.draft=null;return say('Ok, mình đã bỏ yêu cầu đặt bàn đang soạn. Bạn cần gì khác không?',def())}
+ if(D&&D.ready&&!slots&&has(/^ (ok|oke|okay|dong y|duoc|duoc roi|uh|u|vang|da|chot|xac nhan|dat di|dat luon|dat nhe|yes|y|chuan|dung roi|tiep tuc|lam di|dien di|dien giup|dien) /))return fillForm();
+ if(!slots&&has(/ (cam on|thanks|thank you|tks|cam o) /))return say('Không có gì ạ! Quạc quạc 🦆 Cần gì cứ nhắn vịt nhé.',def());
+ if(!slots&&words<=5&&has(/^ (xin chao|chao|hello|hi|hey|alo|yo|quac|quack) /))return hello();
+ if(has(/ (ban la ai|ten gi|ban la gi|ai vay|may la ai) /))return say('Mình là <b>Vịt Vàng</b> 🦆, trợ lý ảo của sân bóng bàn 50K14.1. Mình không tự đặt bàn hay thu tiền thay bạn: mình chỉ điền sẵn biểu mẫu để bạn xác nhận.',def());
+ // 1b. hỏi về thời gian thực và các câu hỏi thường gặp (không cần đúng mẫu lệnh)
+ const hasCode=/\b(?=[A-Z0-9]*\d)(?=[A-Z0-9]*[A-Z])[A-Z0-9]{6}\b/.test(raw.toUpperCase());
+ if(has(/ (may gio roi|bay gio la may gio|bay gio may gio|gio hien tai|gio he thong|hien gio) /))return say(`Bây giờ là <b>${hm(nowMin())}</b> ${lab(TODAY)}${S.off?' (giờ demo đã tua +'+S.off+' phút)':' (giờ thực của hệ thống)'}.`,def());
+ if(has(/ hom nay (la )?(thu may|ngay may|ngay bao nhieu) /))return say(`Hôm nay là <b>${WD[D0.getDay()]}</b>, ngày ${fdy(TODAY)}.`,def());
+ if(!hasCode){
+  if(has(/ (check ?in|nhan ban).* (som|truoc gio|luc nao|khi nao|duoc khong|duoc chua) | (den|toi) som | khi nao (duoc )?(check ?in|nhan ban) /))
+   return say(`Hệ thống chạy theo <b>giờ thực</b>: chỉ <b>check-in được khi đã đến giờ chơi</b> đã đặt (đặt 19:00 thì từ 19:00 mới check-in). Bàn được giữ <b>${S.cfg.giu} phút</b> kể từ giờ chơi; quá hạn lượt đặt tự hủy${S.role=='vl'||st?' (khách đặt online mất cọc)':''}. Đặt tại quầy không có cọc nhưng quy tắc giờ vẫn như vậy.`,def());
+  if(has(/ dat (tai quay|truc tiep) | (tai quay|truc tiep) .*coc /))
+   return say(`Khách <b>đặt trực tiếp tại quầy không phải đặt cọc</b>. Nhân viên nhập số điện thoại để hệ thống kiểm tra: có trong danh sách khách tháng thì tính theo gói, không thì là khách vãng lai. Khách vẫn phải đến đúng giờ chơi mới check-in được.`,def());
+  if(has(/ (toi da|nhieu nhat) .*nguoi | (1|mot) ban .*(may|bao nhieu) nguoi /))return say('Mỗi bàn tối đa <b>4 người</b>. Nhóm đông hơn thì đặt thêm lượt cho bàn khác.',def());
+  if(has(/ (toi da|lau nhat|nhieu nhat) .*(tieng|gio) | choi (duoc )?(bao lau|may tieng) /))return say('Mỗi lượt đặt chơi tối đa <b>4 giờ</b>, và phải kết thúc trước 21:00 (giờ đóng cửa).',def());
+  if(has(/ dat truoc (bao lau|may ngay|toi da|duoc) | truoc (bao nhieu|may) ngay /))return say(`Đặt trước tối đa <b>14 ngày</b> (đến ${fd(MAXD)}).`,def());
+  if(has(/ (thue vot|muon vot|mang vot|vot choi|gui xe|do xe|wifi|phong thay do|nuoc|do an|do uong|an uong|dieu hoa|may lanh) /))return say('Mục này chưa có trong dữ liệu của bản demo, bạn hỏi trực tiếp quầy để chắc chắn nhé 🦆.',def());
+ }
+ // 2. mã đặt bàn / tra cứu khách (nhân viên)
+ const toks=(raw.toUpperCase().match(/\b[A-Z0-9]{6}\b/g)||[]).filter(t=>/\d/.test(t)&&/[A-Z]/.test(t));
+ const find=c=>{const b=S.bk.find(x=>x.code==c);return b?{b}:null};
+ const tok=toks.find(t=>find(t))||toks[0];
+ if(tok&&(has(/ (check ?in|nhan ban|ma dat|ma) /)||find(tok)||words==1)){
+  if(!st)return say('Mã đặt bàn dùng để <b>check-in tại quầy</b>: bạn đưa mã cho nhân viên là được. Mình không đọc thông tin đặt bàn cho khách.',def());
+  const f=find(tok);
+  if(!f)return say(`Không tìm thấy mã <b>${esc(tok)}</b>. Kiểm tra lại mã nhé.`,def());
+  const b=f.b,nm=nowMin();
+  if(b.cancel)return say(`Mã <b>${tok}</b> đã <b>tự hủy</b> do quá ${S.cfg.giu} phút chưa check-in${b.coc?' (mất cọc '+vnd(b.coc)+')':''}.`,def());
+  if(b.done)return say(`Mã <b>${tok}</b> (bàn ${b.tb}, ${esc(b.who)}) đã check-in rồi, đang chơi.`,[{t:'Mở quầy để check-out',a:'nav:quay'}]);
+  if(b.iso!=TODAY)return say(`Mã <b>${tok}</b>: ${esc(b.who)} đặt bàn ${b.tb}, ${lab(b.iso)} lúc ${b.h}:00 (${b.dur} giờ, ${b.n} người). Chưa đến ngày chơi nên chưa check-in được.`,def());
+  const w=b.h*60-nm;
+  return say(`Mã <b>${tok}</b>: bàn <b>${b.tb}</b> · ${esc(b.who)} · ${b.n} người · ${hm(b.h*60)} · ${b.dur} giờ · cọc ${vnd(b.coc)}.<br>`+(w>0?`⏳ Chưa đến giờ chơi (còn ${w} phút): <b>chưa check-in được</b>.`:`✅ Đã đến giờ chơi, check-in được (giữ bàn đến ${hm(holdUntil(b))}).`),[{t:'Mở quầy & điền mã',a:'quay:'+tok}])}
+ const ph=raw.replace(/[\s.\-]/g,'').match(/(?:\+?84|0)\d{8,10}/);
+ if(ph){if(!st)return say('Tra cứu theo số điện thoại chỉ dành cho nhân viên/quản lý ạ.',def());
+  if(!validPhone(ph[0]))return say(`Số <b>${esc(ph[0])}</b> chưa hợp lệ: số điện thoại cần <b>10 chữ số</b>, đầu 03/05/07/08/09 (hoặc +84...). Bạn kiểm tra lại nhé.`,def());
+  const m=findMem(ph[0]);
+  return say(m?memInfo(m):`Số <b>${normPhone(ph[0])}</b> hợp lệ nhưng không có trong danh sách khách tháng → xử lý như <b>khách vãng lai</b> (đặt tại quầy không cọc, thu tiền khi check-out).`,[{t:'Mở danh sách khách tháng',a:'nav:goi'}])}
+ // 3. doanh thu
+ if(has(/ (doanh thu|thu duoc|kiem duoc|thu nhap) /)){
+  if(S.role=='ql')return say(`Doanh thu hôm nay: <b>${vnd(S.rev)}</b> (cộng dồn khi check-out và khi mất cọc, tổng hợp cuối ca 21:00).`,[{t:'Mở Thống kê',a:'nav:tk'}]);
+  return say('Doanh thu chỉ <b>quản lý</b> xem được ạ.',def())}
+ // 3b. bàn nào sắp hết giờ / khi nào có bàn trống (đếm ngược theo giờ thực; khách chỉ thấy giờ hết, không thấy tên)
+ if(has(/ (sap het gio|het gio chua|sap trong|sap xong|khi nao (co )?ban trong|bao gio (co )?ban|bao lau nua (co )?ban|may gio (co )?ban trong) /)){
+  const L=playing();
+  if(!L.length)return say('Hiện không có bàn nào đang chơi, bạn có thể đặt ngay.',def());
+  return say((st?'Các bàn sắp hết giờ (tính từ lúc check-in thực):<br>':'Các bàn sắp trống:<br>')+L.slice(0,st?8:4).map(x=>`• Bàn ${x.k}${st?' · '+esc(x.b.who)+' ('+x.b.n+' người)':''}: ${x.r>0?'còn '+cdTxt(x.r)+' (hết lúc '+hm(endMin(x.b))+')':'<b>quá '+(-x.r)+' phút</b>'}`).join('<br>'),[{t:'Mở sơ đồ sân',a:'nav:san'}].concat(st?[{t:'Mở Quầy',a:'nav:quay'}]:[]))}
+ // 4. hỏi về một bàn cụ thể
+ let tm;
+ if(!has(/ dat /)&&(tm=q.match(/ ban (?:so )?(\d{1,2})(?= |$)(?! ?(?:nguoi|tieng|h|gio|:))/))&&+tm[1]>=1&&+tm[1]<=16){
+  const n=+tm[1],b=stAt(n,TODAY,null);let s=`<b>Bàn ${n}</b> · ${ST[b.st]}`;
+  if(b.st=='trong')s+=n<=4?'. Thuộc khu dạy học: chỉ nhận khách sau 19:00 hoặc ngoài giờ lớp đã duyệt.':'. Đang trống, đặt được ngay.';
+  else if(b.st=='lop')s+=st?`: ${esc(b.who)}.`:'. Khu dạy học đang / sắp có lớp.';
+  else if(b.st=='choi'){const r=remain(b);s+=st?`: ${esc(b.who)}, ${b.n} người, check-in thực ${b.in}${b.late>0?' (trễ '+b.late+' phút)':''}, hết giờ ${hm(endMin(b))} (${r>0?'còn '+cdTxt(r):'<b>quá '+(-r)+' phút</b>'}).`:(r>0?`: còn khoảng ${cdTxt(r)} nữa là hết giờ (dự kiến trống lúc ${hm(endMin(b))}).`:': đã hết giờ, sắp được trả bàn.')}
+  else s+=st?`: ${esc(b.who)}, ${b.n} người, đặt ${b.in}, ${b.dur} giờ.`:': đã được đặt.';
+  return say(s,[{t:'Mở sơ đồ sân',a:'nav:san'}])}
+ // 5. thay đổi yêu cầu đang soạn
+ if(D&&!slots&&has(/^ (doi|sua|chinh) (gio|ngay|so nguoi|nguoi|thoi luong|gio choi|lai) /)){
+  D.ready=false;
+  if(has(/ ngay /)){D.ask='d';return say('Bạn muốn chơi ngày nào?',DAYCHIPS)}
+  if(has(/ (nguoi) /)){D.ask='n';return say('Mấy người chơi ạ?',[1,2,3,4].map(n=>({t:n+' người',s:n+' người'})))}
+  if(has(/ thoi luong /)){D.ask='u';return say('Bạn muốn chơi mấy tiếng?',[1,2,3,4].map(u=>({t:u+' giờ',s:'chơi '+u+' tiếng'})))}
+  D.ask='h';return say('Bạn muốn đổi sang mấy giờ?',hourChips(D.per))}
+ if(!D&&has(/^ (doi|sua) (gio|ngay|so nguoi|nguoi|thoi luong) /))return say('Hiện chưa có yêu cầu đặt bàn nào đang soạn. Bạn muốn đặt lúc nào, mấy người?',def());
+ // 6. thông tin chung
+ if(has(/ (dia chi|o dau|duong nao|ban do) /))return say('Sân tên là <b>50K14.1</b>. Địa chỉ chi tiết chưa được nhập trong bản demo này, bạn hỏi quản lý để bổ sung nhé.',def());
+ if(has(/ (mo cua|dong cua|gio hoat dong|gio lam viec|may gio (mo|dong)|hoat dong den|khung gio) /))
+  return say(`Sân mở cửa <b>06:00–21:00</b>, có 16 bàn, tối đa 4 người mỗi bàn. Đặt trước tối đa <b>14 ngày</b> (đến ${fd(MAXD)}). Khu dạy học (bàn 1–4) chỉ nhận khách sau 19:00 hoặc ngoài giờ lớp đã duyệt.`,[{t:'Còn bàn tối nay không?',s:'còn bàn tối nay không'},{t:'Đặt bàn',a:'book'}]);
+ if(has(/ (danh sach cho|hang cho|xep hang|waitlist|cho den luot) /)){
+  if(st)return say(`Danh sách chờ hiện có <b>${S.wait.length}</b> người`+(S.wait.length?': '+S.wait.map((w,i)=>`${i+1}. ${esc(w.ten)} (${w.n} người)`).join('; ')+'.':'.'),[{t:'Mở Quầy',a:'nav:quay'}]);
+  return say('Khi khung giờ bạn chọn <b>hết bàn</b>, bạn sẽ được đưa vào danh sách chờ. Khi có bàn trống, hệ thống mời bạn theo thứ tự và chờ bạn xác nhận; không xác nhận kịp thì mời người kế tiếp.',def())}
+ // 7. chính sách cọc / hủy
+ if(has(/ (coc|hoan tien|hoan coc|mat coc|huy ban|huy lich|huy dat|doi lich|tre gio|den muon|den tre|tre \d+ phut|mat cho|mat ban|giu ban (bao lau|may phut)|qua han|het han) /))
+  return say(`• <b>Khách vãng lai</b> đặt online cọc <b>${vnd(S.cfg.coc)}</b>, trừ vào tiền chơi khi check-out.<br>• <b>Đặt trực tiếp tại quầy: không thu cọc</b>, nhưng khách phải đến giờ chơi mới check-in được.<br>• Bàn được giữ <b>${S.cfg.giu} phút</b> kể từ giờ chơi; quá hạn chưa check-in thì lượt đặt tự hủy (đặt online thì <b>mất cọc</b>).<br>• Khách tháng và giáo viên đã đăng nhập: không thu cọc.<br><span class="mut">Muốn hủy hoặc đổi giờ: nhờ nhân viên (bản demo chưa có nút hủy).</span>`,def());
+ // 8. gói tháng / lượt
+ const nameHit=st&&S.mem.find(m=>{const n=norm(m.ten),l=n.split(' ').pop();return q.includes(' '+n+' ')||(l.length>=3&&q.includes(' '+l+' '))});
+ if(nameHit&&!slots)return say(memInfo(nameHit),[{t:'Mở danh sách khách tháng',a:'nav:goi'}]);
+ if(has(/ (goi thang|khach thang|luot|gia han|the thang|thanh vien|member|goi 1 thang|goi 3 thang|goi 6 thang|goi) /)){
+  const nl=(q.match(/ (\d{1,3}) luot /)||[])[1];
+  if(has(/ (gia han|them|mua) /)&&nl)return say(`Gia hạn <b>${nl} lượt</b> = ${nl} × 2 giờ × ${vnd(S.cfg.gia)} = <b>${vnd(nl*2*S.cfg.gia)}</b>.`,[{t:'Mở mục gói tháng',a:'nav:goi'}]);
+  if(S.role=='thang'){const m=S.mem[0],l=cap(m)-m.used;
+   return say(`${memInfo(m)}.${l<=5&&l>0?' Sắp hết lượt, bạn nên gia hạn sớm nhé.':''}<br><span class="mut">Mỗi lượt 2 giờ; chơi 3 giờ tính 2 lượt.</span>`,[{t:'Gia hạn 10 lượt hết bao nhiêu?',s:'gia hạn 10 lượt hết bao nhiêu'},{t:'Mở gói của tôi',a:'nav:goi'}])}
+  if(st){const low=S.mem.filter(m=>{const s=mst(m,TODAY);return s.k!='ok'||s.left<=5});
+   return say(`Có <b>${S.mem.length}</b> khách tháng. `+(low.length?'Cần chú ý: '+low.map(m=>{const s=mst(m,TODAY);return `${esc(m.ten)} (${s.k=='ok'?'còn '+s.left+' lượt':s.t})`}).join('; ')+'.':'Chưa ai sắp hết lượt hoặc hết hạn.')+'<br><span class="mut">Gõ tên hoặc số điện thoại để tra cứu một khách.</span>',[{t:'Mở danh sách khách tháng',a:'nav:goi'}])}
+  return say('<b>Gói khách tháng</b> (mỗi lượt 2 giờ; chơi 3 giờ tính 2 lượt):<br>• 1 tháng (30 lượt): 449.000đ<br>• 3 tháng (90 lượt): 1.149.000đ<br>• 6 tháng (180 lượt): 2.349.000đ<br>Dùng được khi còn trong thời hạn và chưa vượt số lượt tối đa của gói.<br><span class="mut">Ai có tên trong danh sách khách tháng mới được tính theo gói. Muốn đăng ký, bạn liên hệ quầy.</span>',def())}
+ // 9. lớp học / giáo viên
+ if(has(/ (lop|day hoc|giao vien|gv|khu day) /)){
+  const priceLine=`Giá một lượt giáo viên (2 giờ): <b>${vnd(S.cfg.luot)}</b>.`;
+  if(S.role=='gv'){
+   if(p.h!=null||p.amb!=null){const s=p.h!=null?p.h:p.amb,e=s+(p.u||2),d=p.d||TODAY;
+    if(d<TODAY||d>MAXD)return say(`Chỉ đăng ký trước tối đa 14 ngày (đến ${fd(MAXD)}).`,def());
+    if(e>19)return say('Lớp phải <b>kết thúc trước 19:00</b> (sau 19:00 khu dạy học mở cho khách). Bạn chọn giờ sớm hơn nhé.',def());
+    if(s<6)return say('Sân mở từ 06:00 nên lớp bắt đầu sớm nhất lúc 6h.',def());
+    S.preCls={d,s,e};say(`Mình đã điền sẵn đăng ký lớp <b>${lab(d)}</b>, <b>${s}:00–${e}:00</b>${p.amb!=null?' (mình hiểu là giờ sáng)':''}. Bạn kiểm tra rồi bấm <b>Gửi quản lý duyệt</b> nhé.`);closeChat();return go('lop')}
+   return say(`Quy định lớp: dùng <b>2 bàn khu dạy học</b>, phải <b>kết thúc trước 19:00</b>, cần <b>quản lý duyệt</b>. ${priceLine}<br><span class="mut">Thử gõ: “đăng ký lớp ngày mai 15h đến 17h”.</span>`,[{t:'Mở Lớp học',a:'nav:lop'},{t:'Đăng ký lớp ngày mai 15h đến 17h',s:'đăng ký lớp ngày mai 15h đến 17h'}])}
+  if(S.role=='ql'){const w=S.cls.filter(c=>c.st=='cho');
+   return say(w.length?`Có <b>${w.length}</b> lớp chờ duyệt: `+w.map(c=>`${esc(c.gv)} · ${lab(c.iso)} · ${c.s}:00–${c.e}:00`).join('; ')+'.':'Hiện không có lớp nào chờ duyệt.',[{t:'Mở Lớp học',a:'nav:lop'}])}
+  return say(`Khu dạy học gồm <b>bàn 1–4</b>. Giáo viên đăng ký lớp (2 bàn, kết thúc trước 19:00) và quản lý duyệt. Khách thường chỉ được nhận bàn khu này sau 19:00 hoặc ngoài giờ lớp đã duyệt.`+(has(/ (gia|bao nhieu|tien) /)?'<br>'+priceLine:''),def())}
+ // 10. giá và ước tính
+ if(has(/ (gia(?! dinh| han)|bang gia|bao nhieu tien|het bao nhieu|phi choi|tinh tien|tien choi|chi phi|tong tien|bao nhieu 1 gio) /)||(slots&&has(/ (bao nhieu|het bao|may tram|may nghin) /))){
+  const n=p.n,u=p.u;
+  let s=`Giá chơi: <b>${vnd(S.cfg.gia)}</b> / người / giờ.`;
+  if(n&&u)s=`<b>${n} người × ${u} giờ × ${vnd(S.cfg.gia)} = ${vnd(n*u*S.cfg.gia)}</b>.`;
+  else if(n)s=`${n} người chơi: <b>${vnd(n*S.cfg.gia)}</b> mỗi giờ (${vnd(S.cfg.gia)}/người/giờ).`;
+  else if(u)s=`Chơi ${u} giờ: <b>${vnd(u*S.cfg.gia)}</b> / người (${vnd(S.cfg.gia)}/người/giờ).`;
+  s+=S.role=='vl'?`<br><span class="mut">Đặt online cần cọc ${vnd(S.cfg.coc)}, trừ vào tiền chơi khi check-out.</span>`:S.role=='thang'?'<br><span class="mut">Khách tháng không thu tiền chơi, chỉ trừ lượt.</span>':st?'<br><span class="mut">Đặt tại quầy không thu cọc; khách vãng lai trả tiền khi check-out.</span>':'';
+  s+='<br><span class="mut">Chơi thường xuyên? Gói 1 tháng 449.000đ (30 lượt × 2 giờ) thường rẻ hơn.</span>';
+  if(slots&&(p.h!=null||p.d)){S.draft=Object.assign({},p.n?{n:p.n}:{},{h:p.h,u:p.u,d:p.d,per:p.per})}
+  return say(s,[{t:'Đặt bàn',a:'book'},{t:'Gói khách tháng',s:'gói khách tháng'}])}
+ // 11. còn bàn không
+ if(has(/ (con (ban|trong|cho|slot)|co (cho|san|slot|ban) (khong|ko|chua)|dong (khong|ko|chua)|co ban (trong|khong)|het ban|ban trong|trong khong|kiem tra (ban|lich)|co the dat|dat duoc khong|may ban|bao nhieu ban|so ban|tinh trang san|full) /)||(slots&&!has(/ (dat|giu|book|muon|can|lay|xep|order|choi) /)&&has(/ (khong|ko|chua|k) $/)&&!has(/ (cho|nguoi) /)))
+  return availFlow(p);
+ // 12. điều hướng: "mở thống kê", "xem sân tối mai 19h"
+ if(has(/^ (mo|vao|di|chuyen|xem|den|dua|dan|quay lai|quay ve|cho xem|cho minh xem|hien|chuyen sang|ve) /)||has(/ (mo|vao) (trang|tab|muc|man hinh) /)){
+  const MAP=[['tk',/ (thong ke|bao cao|doanh thu|du bao|mat do) /],['cfg',/ (cau hinh|cai dat|setting|thiet lap) /],['quay',/ (quay|thu ngan|check ?out|hoa don) /],['goi',/ (khach thang|goi thang|danh sach thang|goi cua toi|goi) /],['lop',/ (lop|lop hoc) /],['dat',/ (dat ban|bieu mau|dat online|form) /],['san',/ (san|so do|tinh trang|ban|trang chu) /]];
+  const tab=has(/ (quay lai|quay ve|trang chu|ve san) /)?'san':(MAP.find(([k,re])=>has(re))||[])[0];
+  if(tab){
+   if(tab=='san'&&TABS[S.role].includes('san')&&(p.d||p.h!=null)){if(p.d&&p.d>=TODAY&&p.d<=MAXD)S.vd=p.d;if(p.h!=null&&p.h>=6&&p.h<=20)S.vh=p.h;
+    if(S.vd!=TODAY){closeChat();go('san');return toast('Đang xem sân '+lab(S.vd)+' lúc '+S.vh+':00')}}
+   return goTab(tab)}}
+ // 13. đặt bàn
+ if(has(/ (dat|giu|book|muon choi|can ban|lay ban|di choi|dang ky choi|xep ban|order|choi bong ban|choi) /)||slots)return bookFlow(p);
+ // 14. trợ giúp
+ if(has(/ (giup|lam duoc gi|co the lam|huong dan|help|chuc nang|ho tro|biet lam) /)){
+  const L={vl:['đặt bàn bằng câu nói tự nhiên (“tối mai 7h cho 4 người chơi 2 tiếng”)','xem còn bàn không, theo ngày/giờ','báo giá và ước tính tiền (“4 người 2 tiếng hết bao nhiêu”)','giải thích cọc, giờ mở cửa, gói khách tháng','mở nhanh các trang'],
+   thang:['đặt bàn bằng câu nói tự nhiên','xem bạn còn bao nhiêu lượt, tính tiền gia hạn','xem còn bàn không, báo giá, giờ mở cửa'],
+   gv:['điền sẵn đăng ký lớp (“đăng ký lớp thứ 5 15h đến 17h”)','nhắc quy định lớp và giá lượt giáo viên','xem sân theo ngày giờ'],
+   nv:['tra mã đặt bàn, tra khách tháng theo tên/SĐT','xem bàn trống, danh sách chờ, chi tiết từng bàn','điền sẵn biểu mẫu đặt bàn, mở Quầy để check-in'],
+   ql:['mọi thứ nhân viên làm được','doanh thu hôm nay, lớp chờ duyệt, khách tháng sắp hết lượt','mở nhanh Thống kê, Cấu hình']}[S.role];
+  return say('Mình giúp được:<br>'+L.map(x=>'• '+x).join('<br>'),def())}
+ // 15. chưa khớp mẫu nào: tự phân tích. Thử sửa lỗi gõ trước, rồi đoán ý theo từ khóa
+ if(!retry){const nq=norm(raw),fq=fix(nq);if(fq!==nq)return think(fq,true)}
+ if(D&&D.ask)return bookFlow({},'Mình chưa hiểu ý bạn lắm.');
+ return guessIntent(q)}
+
+// ---- tự phân tích câu ngoài mẫu: viết tắt, lỗi gõ, đoán ý theo từ khóa ----
+const ABBR={ko:'không',k:'không',hok:'không',hong:'không',dc:'được',bn:'bao nhiêu',bnhieu:'bao nhiêu',sdt:'số điện thoại',tg:'thời gian'};
+function expand(s){return String(s).replace(/(\d)\s?ng(?=\s|$|[.,!?])/gi,'$1 người').replace(/\S+/g,w=>/^[a-zA-Z]+$/.test(w)&&ABBR[w.toLowerCase()]?ABBR[w.toLowerCase()]:w)}
+const VOC=['nguoi','tieng','trong','chieu','thang','luot','choi','check','ngay','muon','thong','doanh','khong','duoc','coc','ban','dat','gia','mai','toi','sang','trua','lop','cua','cho','con','gio','het','huy','mo','xem','tra'];
+function lev(a,b){const d=[...Array(a.length+1)].map((_,i)=>[i]);for(let j=1;j<=b.length;j++)d[0][j]=j;
+ for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]==b[j-1]?0:1));return d[a.length][b.length]}
+function fix(q){return q.split(' ').map(w=>{if(w.length<3||/\d/.test(w)||VOC.includes(w))return w;let best=w,bd=3;
+ for(const v of VOC){if(Math.abs(v.length-w.length)>1)continue;const d=lev(w,v);if(d<bd&&d<=(v.length>=5?2:1)){bd=d;best=v}}return best}).join(' ')}
+const INT=[
+ {w:['dat','giu','book','choi','xep','lay'],label:'đặt bàn',chip:{t:'Đặt bàn',a:'book'}},
+ {w:['trong','con','het','kiem','san','lich','ban'],label:'xem còn bàn trống',chip:{t:'Còn bàn không?',s:'còn bàn không'}},
+ {w:['gia','tien','phi','bao','nhieu','re','tinh'],label:'giá chơi',chip:{t:'Giá chơi',s:'giá chơi bao nhiêu'}},
+ {w:['mo','dong','cua','gio','hoat','khung'],label:'giờ mở cửa',chip:{t:'Giờ mở cửa',s:'giờ mở cửa'}},
+ {w:['coc','hoan','huy','mat','tre','muon','doi','giu'],label:'cọc / hủy / đến trễ',chip:{t:'Quy định cọc & hủy',s:'cọc thế nào'}},
+ {w:['thang','goi','luot','han','member','the'],label:'gói khách tháng',chip:{t:'Gói khách tháng',s:'gói khách tháng'}},
+ {w:['lop','giao','vien','day','hoc'],label:'lớp học',role:['gv','ql','nv'],chip:{t:'Lớp học',s:'lớp học'}},
+ {w:['check','in','ma','den','quay','nhan'],label:'check-in',chip:{t:'Khi nào check-in được?',s:'khi nào được check in'}},
+ {w:['thong','ke','doanh','thu','bao','cao','mat','do'],label:'thống kê / doanh thu',role:['ql'],chip:{t:'Doanh thu hôm nay',s:'doanh thu hôm nay'}}];
+function guessIntent(q){
+ const tk=q.trim().split(' ');
+ const L=INT.filter(it=>!it.role||it.role.includes(S.role)).map(it=>({it,s:it.w.filter(w=>tk.includes(w)).length})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,3);
+ if(L.length)return say('Câu này không giống mẫu quen thuộc, nên mình tự phân tích: mình đoán bạn đang hỏi về '+L.map(x=>'<b>'+x.it.label+'</b>').join(', ')+'. Bạn chọn đúng ý bên dưới, hoặc nói rõ hơn (ví dụ thêm ngày, giờ, số người) nhé 🦆',L.map(x=>x.it.chip));
+ say('Quạc… câu này nằm ngoài những gì mình biết 🦆. Mình hỗ trợ đặt bàn, xem bàn trống, giá, cọc, giờ mở cửa, gói khách tháng, lớp học và check-in. Bạn thử nói lại theo hướng đó, hoặc chọn một gợi ý:',def())}
+
+document.addEventListener('keydown',e=>{if(e.key=='Escape'){if(S.open)chatToggle();document.body.classList.remove('menu')}});
+setTimeout(()=>{const t=$('#duckTip');if(t)t.style.display='none'},9000);
+expire();
+render();
+setInterval(tick,15000);
+</script>
+</body>
+</html>
